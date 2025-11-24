@@ -140,6 +140,16 @@ body {
     padding: 16px 20px;
 }
 
+.card-header.header-actions {
+    flex-wrap: nowrap;
+    gap: 12px;
+}
+
+.card-header .actions-right {
+    flex-wrap: nowrap;
+    gap: 12px;
+}
+
 .card-header h5 {
     font-weight: 700;
 }
@@ -178,6 +188,7 @@ body {
     border-radius: 10px;
     padding: 0 16px;
     font-weight: 700;
+    width: 200px;
 }
 
 .btn-primary-ifpb:hover {
@@ -333,4 +344,3 @@ body {
 .table-responsive {
     border-radius: 12px;
 }
-
