@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
 
     # Suas apps
+    'salas',
     'reservas',
     'auth_app',  
 ]
@@ -80,8 +81,8 @@ WSGI_APPLICATION = 'ifteca_project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        # Database moved to repository-root `data/` for consistency
-        'NAME': BASE_DIR.parent / 'data' / 'db.sqlite3',
+        # Database in repo-root/data/
+        'NAME': BASE_DIR / 'data' / 'db.sqlite3',
     }
 }
 

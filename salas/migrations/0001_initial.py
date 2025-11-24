@@ -18,8 +18,8 @@ class Migration(migrations.Migration):
                     models.CharField(
                         choices=[
                             ("Sala de Aula", "Sala de Aula"),
-                            ("Laboratório", "Laboratório"),
-                            ("Auditório", "Auditório"),
+                            ("Laboratorio", "Laboratorio"),
+                            ("Auditorio", "Auditorio"),
                         ],
                         max_length=50,
                     ),

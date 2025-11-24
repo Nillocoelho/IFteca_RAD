@@ -80,12 +80,12 @@
                                             <td>{{ sala.andar }}</td>
                                             <td>{{ sala.capacidade }} pessoas</td>
                                             <td>
-                                                {% if sala.status == "Disponível" %}
-                                                    <span class="status-pill status-available">Disponível</span>
+                                                {% if sala.status == "Disponivel" %}
+                                                    <span class="status-pill status-available">Disponivel</span>
                                                 {% elif sala.status == "Ocupada" %}
                                                     <span class="status-pill status-occupied">Ocupada</span>
-                                                {% elif sala.status == "Em Manutenção" %}
-                                                    <span class="status-pill status-maintenance">Em Manutenção</span>
+                                                {% elif sala.status == "Em Manutencao" %}
+                                                    <span class="status-pill status-maintenance">Em Manutencao</span>
                                                 {% else %}
                                                     <span class="status-pill status-maintenance">{{ sala.status }}</span>
                                                 {% endif %}
@@ -150,9 +150,9 @@
                         <div class="col-md-6">
                             <label class="form-label fw-semibold" for="modalStatus">Status</label>
                             <select class="form-select" id="modalStatus" name="status" required>
-                                <option value="Disponível" selected>Disponível</option>
+                                <option value="Disponivel" selected>Disponivel</option>
                                 <option value="Ocupada">Ocupada</option>
-                                <option value="Em Manutenção">Em Manutenção</option>
+                                <option value="Em Manutencao">Em Manutencao</option>
                             </select>
                         </div>
                         <div class="col-md-6">

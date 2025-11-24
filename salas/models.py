@@ -4,8 +4,8 @@ from django.db import models
 class Sala(models.Model):
     TIPO_CHOICES = [
         ("Sala de Aula", "Sala de Aula"),
-        ("Laboratório", "Laboratório"),
-        ("Auditório", "Auditório"),
+        ("Laboratorio", "Laboratorio"),
+        ("Auditorio", "Auditorio"),
     ]
 
     nome = models.CharField(max_length=255)
@@ -16,5 +16,5 @@ class Sala(models.Model):
     class Meta:
         ordering = ["nome"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.nome} ({self.tipo})"
