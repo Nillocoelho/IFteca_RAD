@@ -33,8 +33,6 @@ INSTALLED_APPS = [
     # Suas apps
     'reservas',
     'auth_app',  
-    # App de salas (interface de gerenciamento)
-    'salas',
 ]
 
 
