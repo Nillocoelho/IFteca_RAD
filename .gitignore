@@ -1,0 +1,32 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+ENV/
+env/
+.ENV/
+
+# pip
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+
+# Test / cache
+.pytest_cache/
+.mypy_cache/
+
+# IDEs
+.vscode/
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
