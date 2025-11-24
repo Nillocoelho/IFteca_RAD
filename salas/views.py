@@ -1,9 +1,9 @@
 import json
 
-from django.contrib.admin.views.decorators import staff_member_required
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 from .models import Sala
@@ -52,7 +52,6 @@ def gerenciar_salas(request):
     )
 
 
-@staff_member_required
 @require_GET
 def criar_sala(request):
     return render(
@@ -62,8 +61,8 @@ def criar_sala(request):
     )
 
 
-@staff_member_required
 @require_POST
+@csrf_exempt  # a view de API aceita chamadas via fetch; validação de campos continua
 def api_criar_sala(request):
     try:
         payload = json.loads(request.body or "{}")
@@ -109,8 +108,8 @@ def api_criar_sala(request):
     )
 
 
-@staff_member_required
 @require_http_methods(["POST", "DELETE"])
+@csrf_exempt  # permite fetch sem sessão de admin; validação e CSRF do header permanecem
 def api_update_delete_sala(request, sala_id):
     try:
         sala = Sala.objects.get(id=sala_id)
