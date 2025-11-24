@@ -80,7 +80,8 @@ WSGI_APPLICATION = 'ifteca_project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        # Database moved to repository-root `data/` for consistency
+        'NAME': BASE_DIR.parent / 'data' / 'db.sqlite3',
     }
 }
 
