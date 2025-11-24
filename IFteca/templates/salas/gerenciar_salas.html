@@ -10,101 +10,114 @@
     <link rel="stylesheet" href="{% static 'salas/styles.css' %}">
 </head>
 <body>
-    <div class="d-flex min-vh-100 bg-light">
-        <aside class="sidebar p-3 d-flex flex-column">
-            <div class="d-flex align-items-center mb-4">
-                <img src="https://dummyimage.com/40x40/5cb85c/ffffff&text=I" alt="IFTECA" class="rounded-circle me-2">
+    <div class="layout">
+        <header class="topbar">
+            <div class="brand">
+                <img src="https://dummyimage.com/36x36/008B45/ffffff&text=I" alt="IFTECA" class="rounded">
                 <div>
-                    <div class="fw-semibold text-white">IFTECA</div>
-                    <div class="text-white-50 small">Sistema de Reserva de Salas - IFRS</div>
+                    <div class="title">IFTECA</div>
+                    <div class="subtitle">Sistema de Reserva de Salas - IFPB</div>
                 </div>
             </div>
-            <nav class="nav flex-column">
-                <a class="nav-link text-white-50" href="#"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
-                <a class="nav-link active" aria-current="page" href="#"><i class="bi bi-door-open-fill me-2"></i>Gerenciar Salas</a>
-                <a class="nav-link text-white-50" href="#"><i class="bi bi-people-fill me-2"></i>Gerenciar Usuários</a>
-                <a class="nav-link text-white-50" href="#"><i class="bi bi-calendar-event me-2"></i>Gerenciar Reservas</a>
-            </nav>
-        </aside>
-        <main class="flex-grow-1 p-4">
-            <div class="d-flex justify-content-between align-items-start mb-4">
-                <div>
-                    <h2 class="fw-semibold">Gerenciar Salas</h2>
-                    <p class="text-secondary mb-0">Adicione, edite ou remova salas do sistema</p>
-                </div>
-                <div class="d-flex align-items-center gap-3">
-                    <div class="text-end">
-                        <div class="small text-secondary">Administrador</div>
-                        <div class="fw-semibold">Antony</div>
-                    </div>
-                    <div class="avatar-circle">A</div>
-                </div>
+            <div class="user-area">
+                <span class="small text-muted">Administrador</span>
+                <span class="user-pill">Admin</span>
+                <a href="#" class="text-decoration-none text-muted fw-semibold"><i class="bi bi-box-arrow-right me-1"></i>Sair</a>
             </div>
-            <div class="card shadow-sm">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="mb-0">Lista de Salas</h5>
-                        <small class="text-secondary">Visualize todas as salas cadastradas no sistema</small>
-                    </div>
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="input-group" style="max-width:320px;">
-                            <input type="search" class="form-control" placeholder="Buscar sala..." aria-label="Buscar sala">
-                            <button class="btn btn-light border"><i class="bi bi-search"></i></button>
+        </header>
+
+        <div class="shell">
+            <aside class="sidebar d-flex flex-column">
+                <nav class="nav flex-column">
+                    <a class="nav-link" href="#"><i class="bi bi-speedometer2"></i>Dashboard</a>
+                    <a class="nav-link active" aria-current="page" href="#"><i class="bi bi-door-open-fill"></i>Gerenciar Salas</a>
+                    <a class="nav-link" href="#"><i class="bi bi-people-fill"></i>Gerenciar Usuários</a>
+                    <a class="nav-link" href="#"><i class="bi bi-calendar-event"></i>Gerenciar Reservas</a>
+                </nav>
+            </aside>
+
+            <main class="content">
+                <div class="page-header mb-4">
+                    <h1>Gerenciar Salas</h1>
+                    <p>Adicione, edite ou remova salas do sistema</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+                        <div>
+                            <h5 class="mb-1">Lista de Salas</h5>
+                            <small class="text-secondary">Visualize todas as salas cadastradas no sistema</small>
                         </div>
-                        <button class="btn btn-success add-large" data-bs-toggle="modal" data-bs-target="#modalSala">
-                            <i class="bi bi-plus-lg me-2"></i>Adicionar Sala
-                        </button>
+                        <div class="d-flex align-items-center gap-3 flex-wrap">
+                            <div class="search-box">
+                                <i class="bi bi-search"></i>
+                                <input type="search" id="searchInput" class="form-control" placeholder="Buscar sala..." aria-label="Buscar sala">
+                            </div>
+                            <button class="btn btn-primary-ifpb" data-bs-toggle="modal" data-bs-target="#modalSala">
+                                <i class="bi bi-plus-lg me-2"></i>Adicionar Sala
+                            </button>
+                        </div>
                     </div>
-                </div>
-                <div class="card-body">
-                    <div id="modalSavedFeedback" class="alert alert-success d-none" role="alert"></div>
-                    <div class="table-responsive">
-                        <table class="table align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Nome</th>
-                                    <th>Andar</th>
-                                    <th>Capacidade</th>
-                                    <th>Status</th>
-                                    <th>Equipamentos</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="salasTableBody">
-                                {% if salas %}
-                                    {% for sala in salas %}
+                    <div class="card-body">
+                        <div id="modalSavedFeedback" class="alert alert-success d-none" role="alert"></div>
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0" id="salasTable">
+                                <thead>
                                     <tr>
-                                        <td>{{ sala.nome }}</td>
-                                        <td>{{ sala.andar }}</td>
-                                        <td>{{ sala.capacidade }} pessoas</td>
-                                        <td>
-                                            <span class="badge status-badge bg-{{ sala.status_class|default:'secondary' }}">{{ sala.status }}</span>
-                                        </td>
-                                        <td>
-                                            {% for eq in sala.equipamentos %}
-                                                <span class="equip-tag">{{ eq }}</span>
-                                            {% endfor %}
-                                            {% if sala.equipamentos|length > 2 %}
-                                                <span class="text-muted">+{{ sala.equipamentos|length|add:"-2" }}</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <a href="#" class="btn btn-link text-primary me-2" title="Editar"><i class="bi bi-pencil"></i></a>
-                                            <a href="#" class="btn btn-link text-danger" title="Excluir"><i class="bi bi-trash"></i></a>
-                                        </td>
+                                        <th>Nome</th>
+                                        <th>Andar</th>
+                                        <th>Capacidade</th>
+                                        <th>Status</th>
+                                        <th>Equipamentos</th>
+                                        <th class="text-end">Ações</th>
                                     </tr>
-                                    {% endfor %}
-                                {% else %}
-                                    <tr class="js-empty-row">
-                                        <td colspan="6" class="text-center text-secondary py-4">Nenhuma sala cadastrada ainda.</td>
-                                    </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody id="salasTableBody">
+                                    {% if salas %}
+                                        {% for sala in salas %}
+                                        <tr data-nome="{{ sala.nome }}" data-andar="{{ sala.andar }}">
+                                            <td class="fw-semibold">{{ sala.nome }}</td>
+                                            <td>{{ sala.andar }}</td>
+                                            <td>{{ sala.capacidade }} pessoas</td>
+                                            <td>
+                                                {% if sala.status == "Disponível" %}
+                                                    <span class="status-pill status-available">Disponível</span>
+                                                {% elif sala.status == "Ocupada" %}
+                                                    <span class="status-pill status-occupied">Ocupada</span>
+                                                {% elif sala.status == "Em Manutenção" %}
+                                                    <span class="status-pill status-maintenance">Em Manutenção</span>
+                                                {% else %}
+                                                    <span class="status-pill status-maintenance">{{ sala.status }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="equipments">
+                                                    {% for eq in sala.equipamentos|slice:":2" %}
+                                                        <span class="equip-tag">{{ eq }}</span>
+                                                    {% endfor %}
+                                                    {% if sala.equipamentos|length > 2 %}
+                                                        <span class="equip-more">+{{ sala.equipamentos|length|add:"-2" }}</span>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                            <td class="text-end">
+                                                <button class="action-btn edit" title="Editar"><i class="bi bi-pencil"></i></button>
+                                                <button class="action-btn delete" title="Excluir"><i class="bi bi-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr class="js-empty-row">
+                                            <td colspan="6" class="empty-state">Nenhuma sala cadastrada ainda.</td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </main>
+            </main>
+        </div>
     </div>
 
     <!-- Modal Adicionar Sala -->
@@ -127,8 +140,20 @@
                             <input type="text" id="modalNome" name="nome" class="form-control" placeholder="Ex: Sala 101" required>
                         </div>
                         <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="modalAndar">Andar</label>
+                            <input type="text" id="modalAndar" name="andar" class="form-control" placeholder="Ex: 1º Andar" required>
+                        </div>
+                        <div class="col-md-6">
                             <label class="form-label fw-semibold" for="modalCapacidade">Capacidade</label>
                             <input type="number" min="1" id="modalCapacidade" name="capacidade" class="form-control" placeholder="Ex: 20" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="modalStatus">Status</label>
+                            <select class="form-select" id="modalStatus" name="status" required>
+                                <option value="Disponível" selected>Disponível</option>
+                                <option value="Ocupada">Ocupada</option>
+                                <option value="Em Manutenção">Em Manutenção</option>
+                            </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold" for="modalTipo">Tipo</label>
@@ -139,6 +164,15 @@
                                 {% endfor %}
                             </select>
                         </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold" for="modalEquip">Equipamentos (separados por vírgula)</label>
+                            <input type="text" id="modalEquip" name="equipamentos" class="form-control" placeholder="Projetor, Quadro branco, Ar condicionado">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold" for="modalDesc">Descrição</label>
+                            <textarea id="modalDesc" name="descricao" class="form-control" rows="3" placeholder="Descrição da sala..."></textarea>
+                        </div>
+                        <input type="hidden" id="modalSalaId" name="id">
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -151,5 +185,26 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{% static 'salas/forms.js' %}"></script>
+    <script>
+        // Busca por nome ou andar
+        const searchInput = document.getElementById("searchInput");
+        const tableRows = document.querySelectorAll("#salasTableBody tr");
+
+        searchInput?.addEventListener("input", () => {
+            const term = searchInput.value.toLowerCase().trim();
+            tableRows.forEach((row) => {
+                const nome = row.getAttribute("data-nome")?.toLowerCase() || "";
+                const andar = row.getAttribute("data-andar")?.toLowerCase() || "";
+                const matches = nome.includes(term) || andar.includes(term);
+                row.style.display = matches ? "" : "none";
+            });
+
+            const anyVisible = Array.from(tableRows).some((row) => row.style.display !== "none");
+            const emptyRow = document.querySelector(".js-empty-row");
+            if (emptyRow) {
+                emptyRow.style.display = anyVisible ? "none" : "";
+            }
+        });
+    </script>
 </body>
 </html>

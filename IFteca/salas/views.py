@@ -5,6 +5,7 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_http_methods
 
 from .models import Sala
 
@@ -107,3 +108,59 @@ def api_criar_sala(request):
             },
         }
     )
+
+
+@staff_member_required
+@require_http_methods(["POST", "DELETE"])
+def api_update_delete_sala(request, sala_id):
+    # Update (POST) or Delete (DELETE) a Sala
+    try:
+        sala = Sala.objects.get(id=sala_id)
+    except Sala.DoesNotExist:
+        return JsonResponse({"errors": ["Sala não encontrada."]}, status=404)
+
+    if request.method == "DELETE":
+        sala.delete()
+        return JsonResponse({"message": "Sala removida com sucesso.", "id": sala_id})
+
+    # POST -> update
+    try:
+        payload = json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"errors": ["Payload inválido. Envie JSON válido."]}, status=400)
+
+    nome = (payload.get("nome") or "").strip()
+    capacidade_raw = payload.get("capacidade")
+    tipo = (payload.get("tipo") or "").strip()
+
+    errors = []
+    if not nome:
+        errors.append("O nome da sala é obrigatório.")
+
+    try:
+        capacidade = int(capacidade_raw)
+        if capacidade <= 0:
+            raise ValueError
+    except (TypeError, ValueError):
+        errors.append("Capacidade deve ser um número inteiro positivo.")
+        capacidade = None
+
+    tipos_validos = [choice[0] for choice in Sala.TIPO_CHOICES]
+    if tipo and tipo not in tipos_validos:
+        errors.append("Selecione um tipo de sala válido.")
+
+    if errors:
+        return JsonResponse({"errors": errors}, status=400)
+
+    # Apply updates
+    sala.nome = nome or sala.nome
+    if capacidade is not None:
+        sala.capacidade = capacidade
+    if tipo:
+        sala.tipo = tipo
+    sala.save()
+
+    return JsonResponse({
+        "message": "Sala atualizada com sucesso.",
+        "sala": {"id": sala.id, "nome": sala.nome, "capacidade": sala.capacidade, "tipo": sala.tipo},
+    })

@@ -21,7 +21,6 @@ from salas import views as salas_views
 
 urlpatterns = [
     path("admin/salas/novo", salas_views.criar_sala, name="criar_sala"),
-    path("api/salas/", salas_views.api_criar_sala, name="api_criar_sala"),
     path('admin/', admin.site.urls),
     path('', include('salas.urls')),
 ]
