@@ -1,5 +1,6 @@
 import json
 from django.http import JsonResponse
+from django.shortcuts import render
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.csrf import csrf_exempt
 
@@ -227,5 +228,13 @@ def salas_publicas(request):
     ]
 
     return JsonResponse(data, safe=False, status=200)
+
+
+@login_required
+@user_passes_test(is_admin)
+def gerenciar_salas_ui(request):
+    """Renderiza a interface de gerenciamento de salas (somente staff)."""
+    tipos = Sala.TIPO_CHOICES
+    return render(request, 'reservas/gerenciar_salas.html', {'tipos': tipos})
 
 

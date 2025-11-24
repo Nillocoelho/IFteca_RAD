@@ -7,6 +7,7 @@ urlpatterns = [
     path("admin/salas/", views.salas_admin, name="salas_admin"),
     path("admin/salas/<int:sala_id>/", views.atualizar_sala, name="atualizar_sala"),
     path("admin/salas/<int:sala_id>/delete/", views.deletar_sala, name="deletar_sala"),
+    path("admin/salas/manage/", views.gerenciar_salas_ui, name="gerenciar_salas_ui"),
 
     # Público
     path("salas/publicas/", views.salas_publicas, name="salas_publicas"),
