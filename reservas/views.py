@@ -1,14 +1,9 @@
 import json
 from django.http import JsonResponse
 from django.shortcuts import render
-from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.csrf import csrf_exempt
 
 from .models import Sala, Reserva
-
-
-def is_admin(user):
-    return user.is_staff or user.is_superuser
 
 
 # ============================================
@@ -16,8 +11,6 @@ def is_admin(user):
 # ============================================
 
 @csrf_exempt
-@login_required
-@user_passes_test(is_admin)
 def salas_admin(request):
     """
     Endpoint GET/POST /api/admin/salas/
@@ -105,8 +98,6 @@ def salas_admin(request):
 # ============================================
 
 @csrf_exempt
-@login_required
-@user_passes_test(is_admin)
 def atualizar_sala(request, sala_id):
     """
     Endpoint PUT /api/admin/salas/<id>/
@@ -177,8 +168,6 @@ def atualizar_sala(request, sala_id):
 # ============================================
 
 @csrf_exempt
-@login_required
-@user_passes_test(is_admin)
 def deletar_sala(request, sala_id):
     """
     Endpoint DELETE /api/admin/salas/<id>/
@@ -230,10 +219,8 @@ def salas_publicas(request):
     return JsonResponse(data, safe=False, status=200)
 
 
-@login_required
-@user_passes_test(is_admin)
 def gerenciar_salas_ui(request):
-    """Renderiza a interface de gerenciamento de salas (somente staff)."""
+    """Renderiza a interface de gerenciamento de salas (mock admin sem login por enquanto)."""
     tipos = Sala.TIPO_CHOICES
     return render(request, 'reservas/gerenciar_salas.html', {'tipos': tipos})
 

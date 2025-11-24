@@ -94,19 +94,37 @@ window.addEventListener("DOMContentLoaded", () => {
     const equipments = sala.equipamentos || [];
     const visibleEquip = equipments.slice(0, 2).map((e) => `<span class="equip-tag">${e}</span>`).join(" ");
     const extra = equipments.length > 2 ? `<span class="text-muted">+${equipments.length - 2}</span>` : "";
-    const statusClass = sala.status === "Disponivel" ? "success" : sala.status === "Ocupada" ? "danger" : "warning";
+    // mapear status para as mesmas classes usadas pelo template server-side
+    const statusText = sala.status || "Disponivel";
+    const statusPillClass =
+      statusText === "Disponivel"
+        ? "status-pill status-available"
+        : statusText === "Ocupada"
+        ? "status-pill status-occupied"
+        : "status-pill status-maintenance";
+
     tr.innerHTML = `
-      <td class="sala-nome">${sala.nome}</td>
+      <td class="fw-semibold sala-nome">${sala.nome}</td>
       <td class="sala-andar">${sala.andar || ""}</td>
       <td class="sala-capacidade">${sala.capacidade} pessoas</td>
-      <td class="sala-status"><span class="badge status-badge bg-${statusClass}">${sala.status || "Disponivel"}</span></td>
-      <td class="sala-equip">${visibleEquip} ${extra}</td>
-      <td class="sala-actions">
+      <td class="sala-status"><span class="${statusPillClass}">${statusText}</span></td>
+      <td class="sala-equip">
+        <div class="equipments">${visibleEquip} ${extra}</div>
+      </td>
+      <td class="text-end sala-actions">
         <button class="btn btn-sm btn-edit text-primary me-2" data-id="${sala.id}" title="Editar"><i class="bi bi-pencil"></i></button>
         <button class="btn btn-sm btn-delete text-danger" data-id="${sala.id}" title="Excluir"><i class="bi bi-trash"></i></button>
       </td>
     `;
+
+    // meta usado pelo editor dinâmico
     tr._meta = { equipamentos: equipments, descricao: sala.descricao || "" };
+    // dataset para consistência com linhas renderizadas no servidor
+    tr.dataset.nome = sala.nome || "";
+    tr.dataset.andar = sala.andar || "";
+    tr.dataset.tipo = sala.tipo || "";
+    tr.dataset.equipamentos = (equipments || []).join(",");
+    tr.dataset.descricao = sala.descricao || "";
     return tr;
   }
 
@@ -171,12 +189,36 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("salasTableBody")?.addEventListener("click", async (e) => {
-    const editBtn = e.target.closest(".btn-edit");
-    const delBtn = e.target.closest(".btn-delete");
+    const editBtn = e.target.closest(".btn-edit, .action-btn.edit, .action-btn");
+    const delBtn = e.target.closest(".btn-delete, .action-btn.delete");
     if (editBtn) {
-      const id = editBtn.dataset.id;
-      const row = document.querySelector(`tr[data-id="${id}"]`);
+      let row = editBtn.closest("tr");
       if (!row) return;
+      let id = editBtn.dataset.id || row.dataset.id;
+      if (!id) {
+        // tenta resolver id via lookup pelo nome (caso linhas antigas não tenham data-id)
+        const nome = row.dataset.nome || row.querySelector(".sala-nome")?.textContent || "";
+        if (nome) {
+          try {
+            const resp = await fetch(`/api/salas/lookup/?nome=${encodeURIComponent(nome)}`, { credentials: "same-origin" });
+            if (resp.ok) {
+              const json = await resp.json();
+              id = json.id;
+              // definir dataset para evitar nova lookup
+              row.dataset.id = id;
+            } else {
+              // não encontrou ou ambíguo
+              alert("Nao foi possivel identificar o registro para edicao.");
+              return;
+            }
+          } catch (err) {
+            alert("Erro ao consultar servidor para identificar a sala.");
+            return;
+          }
+        } else {
+          return;
+        }
+      }
       document.getElementById("modalSalaLabel").textContent = "Editar Sala";
       document.getElementById("modalNome").value = row.querySelector(".sala-nome")?.textContent || "";
       document.getElementById("modalCapacidade").value = (row.querySelector(".sala-capacidade")?.textContent || "").replace(/\D/g, "") || "";
@@ -184,8 +226,14 @@ window.addEventListener("DOMContentLoaded", () => {
       document.getElementById("modalAndar").value = row.querySelector(".sala-andar")?.textContent || "";
       const statusText = row.querySelector(".sala-status")?.textContent.trim() || "Disponivel";
       document.getElementById("modalStatus").value = statusText;
-      document.getElementById("modalEquip").value = (row._meta?.equipamentos || []).join(", ");
-      document.getElementById("modalDesc").value = row._meta?.descricao || "";
+      const equipamentosFromMeta = row._meta?.equipamentos;
+      if (Array.isArray(equipamentosFromMeta)) {
+        document.getElementById("modalEquip").value = equipamentosFromMeta.join(", ");
+      } else {
+        const ds = row.dataset.equipamentos || "";
+        document.getElementById("modalEquip").value = ds ? ds.split(",").map((s) => s.trim()).filter(Boolean).join(", ") : "";
+      }
+      document.getElementById("modalDesc").value = row._meta?.descricao || row.dataset.descricao || "";
       document.getElementById("modalSalaId").value = id;
       const modal = new bootstrap.Modal(document.getElementById("modalSala"));
       modal.show();
@@ -193,7 +241,31 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 
     if (delBtn) {
-      const id = delBtn.dataset.id;
+      let row = delBtn.closest("tr");
+      if (!row) return;
+      let id = delBtn.dataset.id || row.dataset.id;
+      if (!id) {
+        const nome = row.dataset.nome || row.querySelector(".sala-nome")?.textContent || "";
+        if (nome) {
+          try {
+            const resp = await fetch(`/api/salas/lookup/?nome=${encodeURIComponent(nome)}`, { credentials: "same-origin" });
+            if (resp.ok) {
+              const json = await resp.json();
+              id = json.id;
+              row.dataset.id = id;
+            } else {
+              alert("Nao foi possivel identificar o registro para exclusao.");
+              return;
+            }
+          } catch (err) {
+            alert("Erro ao consultar servidor para identificar a sala.");
+            return;
+          }
+        } else {
+          return;
+        }
+      }
+
       if (!confirm("Tem certeza que deseja excluir esta sala?")) return;
       try {
         const csrf = getCsrfToken(document.getElementById("modalSalaForm"));
@@ -206,8 +278,7 @@ window.addEventListener("DOMContentLoaded", () => {
           alert("Erro ao excluir a sala.");
           return;
         }
-        const row = document.querySelector(`tr[data-id="${id}"]`);
-        row?.remove();
+        row.remove();
       } catch (err) {
         alert("Erro ao excluir a sala.");
       }

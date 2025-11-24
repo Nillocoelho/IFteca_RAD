@@ -10,6 +10,27 @@ from .models import Sala
 
 
 @require_GET
+def api_lookup_sala(request):
+    """Procura uma sala por nome e retorna o id.
+
+    Usado pelo JS quando a linha renderizada no servidor não inclui `data-id`.
+    """
+    nome = (request.GET.get("nome") or "").strip()
+    if not nome:
+        return JsonResponse({"errors": ["Parametro 'nome' e obrigatorio."]}, status=400)
+
+    qs = Sala.objects.filter(nome=nome)
+    count = qs.count()
+    if count == 0:
+        return JsonResponse({"errors": ["Sala nao encontrada."]}, status=404)
+    if count > 1:
+        return JsonResponse({"errors": ["Nome de sala ambiguo; existem multiplas entradas com esse nome."]}, status=409)
+
+    sala = qs.first()
+    return JsonResponse({"id": sala.id, "nome": sala.nome})
+
+
+@require_GET
 def gerenciar_salas(request):
     # Lista salas reais e complementa com dados de exibição (andar/status/equipamentos) para a UI.
     salas_qs = Sala.objects.all()
@@ -38,6 +59,8 @@ def gerenciar_salas(request):
                 "id": sala.id,
                 "nome": sala.nome,
                 "andar": infer_andar(sala.nome),
+                "tipo": getattr(sala, "tipo", ""),
+                "descricao": getattr(sala, "descricao", ""),
                 "capacidade": sala.capacidade,
                 "status": status_label,
                 "status_class": status_class,

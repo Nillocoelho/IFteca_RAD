@@ -75,10 +75,10 @@
                                 <tbody id="salasTableBody">
                                     {% if salas %}
                                         {% for sala in salas %}
-                                        <tr data-nome="{{ sala.nome }}" data-andar="{{ sala.andar }}">
-                                            <td class="fw-semibold">{{ sala.nome }}</td>
+                                        <tr data-id="{{ sala.id }}" data-nome="{{ sala.nome }}" data-andar="{{ sala.andar }}" data-tipo="{{ sala.tipo }}" data-equipamentos="{{ sala.equipamentos|join:"," }}" data-descricao="{{ sala.descricao }}">
+                                            <td class="fw-semibold sala-nome">{{ sala.nome }}</td>
                                             <td>{{ sala.andar }}</td>
-                                            <td>{{ sala.capacidade }} pessoas</td>
+                                            <td class="sala-capacidade">{{ sala.capacidade }} pessoas</td>
                                             <td>
                                                 {% if sala.status == "Disponivel" %}
                                                     <span class="status-pill status-available">Disponivel</span>
@@ -100,9 +100,9 @@
                                                     {% endif %}
                                                 </div>
                                             </td>
-                                            <td class="text-end">
-                                                <button class="action-btn edit" title="Editar"><i class="bi bi-pencil"></i></button>
-                                                <button class="action-btn delete" title="Excluir"><i class="bi bi-trash"></i></button>
+                                            <td class="text-end sala-actions">
+                                                <button class="btn btn-sm btn-edit text-primary me-2" data-id="{{ sala.id }}" title="Editar"><i class="bi bi-pencil"></i></button>
+                                                <button class="btn btn-sm btn-delete text-danger" data-id="{{ sala.id }}" title="Excluir"><i class="bi bi-trash"></i></button>
                                             </td>
                                         </tr>
                                         {% endfor %}
