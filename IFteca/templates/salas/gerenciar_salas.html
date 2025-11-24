@@ -46,11 +46,12 @@
                         <h5 class="mb-0">Lista de Salas</h5>
                         <small class="text-secondary">Visualize todas as salas cadastradas no sistema</small>
                     </div>
-                    <div class="d-flex gap-2">
-                        <a class="btn btn-outline-success" href="{% url 'criar_sala' %}">
-                            <i class="bi bi-plus-circle me-2"></i>Criar Sala
-                        </a>
-                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalSala">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="input-group" style="max-width:320px;">
+                            <input type="search" class="form-control" placeholder="Buscar sala..." aria-label="Buscar sala">
+                            <button class="btn btn-light border"><i class="bi bi-search"></i></button>
+                        </div>
+                        <button class="btn btn-success add-large" data-bs-toggle="modal" data-bs-target="#modalSala">
                             <i class="bi bi-plus-lg me-2"></i>Adicionar Sala
                         </button>
                     </div>
@@ -61,10 +62,12 @@
                         <table class="table align-middle mb-0">
                             <thead>
                                 <tr>
-                                    <th>Nome da sala</th>
+                                    <th>Nome</th>
+                                    <th>Andar</th>
                                     <th>Capacidade</th>
-                                    <th>Tipo</th>
-                                    <th>Criada em</th>
+                                    <th>Status</th>
+                                    <th>Equipamentos</th>
+                                    <th>Ações</th>
                                 </tr>
                             </thead>
                             <tbody id="salasTableBody">
@@ -72,14 +75,28 @@
                                     {% for sala in salas %}
                                     <tr>
                                         <td>{{ sala.nome }}</td>
+                                        <td>{{ sala.andar }}</td>
                                         <td>{{ sala.capacidade }} pessoas</td>
-                                        <td>{{ sala.tipo }}</td>
-                                        <td>{{ sala.criado_em|date:'d/m/Y H:i' }}</td>
+                                        <td>
+                                            <span class="badge status-badge bg-{{ sala.status_class|default:'secondary' }}">{{ sala.status }}</span>
+                                        </td>
+                                        <td>
+                                            {% for eq in sala.equipamentos %}
+                                                <span class="equip-tag">{{ eq }}</span>
+                                            {% endfor %}
+                                            {% if sala.equipamentos|length > 2 %}
+                                                <span class="text-muted">+{{ sala.equipamentos|length|add:"-2" }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="#" class="btn btn-link text-primary me-2" title="Editar"><i class="bi bi-pencil"></i></a>
+                                            <a href="#" class="btn btn-link text-danger" title="Excluir"><i class="bi bi-trash"></i></a>
+                                        </td>
                                     </tr>
                                     {% endfor %}
                                 {% else %}
                                     <tr class="js-empty-row">
-                                        <td colspan="4" class="text-center text-secondary py-4">Nenhuma sala cadastrada ainda.</td>
+                                        <td colspan="6" class="text-center text-secondary py-4">Nenhuma sala cadastrada ainda.</td>
                                     </tr>
                                 {% endif %}
                             </tbody>
