@@ -20,9 +20,11 @@
                 </div>
             </div>
             <div class="user-area">
-                <span class="small text-muted">Administrador</span>
+                <span class="small text-muted">{{ request.user.get_full_name|default:request.user.username|default:"Administrador" }}</span>
                 <span class="user-pill">Admin</span>
-                <a href="#" class="text-decoration-none text-muted fw-semibold"><i class="bi bi-box-arrow-right me-1"></i>Sair</a>
+                <a href="{% url 'login_page' %}" class="text-decoration-none text-muted fw-semibold">
+                    <i class="bi bi-box-arrow-right me-1"></i>Sair
+                </a>
             </div>
         </header>
 
@@ -30,7 +32,7 @@
             <aside class="sidebar d-flex flex-column">
                 <nav class="nav flex-column">
                     <a class="nav-link" href="#"><i class="bi bi-speedometer2"></i>Dashboard</a>
-                    <a class="nav-link active" aria-current="page" href="#"><i class="bi bi-door-open-fill"></i>Gerenciar Salas</a>
+                    <a class="nav-link active" aria-current="page" href="{% url 'gerenciar_salas' %}"><i class="bi bi-door-open-fill"></i>Gerenciar Salas</a>
                     <a class="nav-link" href="#"><i class="bi bi-people-fill"></i>Gerenciar Usuários</a>
                     <a class="nav-link" href="#"><i class="bi bi-calendar-event"></i>Gerenciar Reservas</a>
                 </nav>
@@ -75,9 +77,9 @@
                                 <tbody id="salasTableBody">
                                     {% if salas %}
                                         {% for sala in salas %}
-                                        <tr data-id="{{ sala.id }}" data-nome="{{ sala.nome }}" data-andar="{{ sala.andar }}" data-tipo="{{ sala.tipo }}" data-equipamentos="{{ sala.equipamentos|join:"," }}" data-descricao="{{ sala.descricao }}">
+                                        <tr data-id="{{ sala.id }}" data-nome="{{ sala.nome }}" data-andar="{{ sala.andar|default_if_none:'' }}" data-tipo="{{ sala.tipo }}" data-equipamentos="{{ sala.equipamentos|join:"," }}" data-descricao="{{ sala.descricao|default_if_none:'' }}">
                                             <td class="fw-semibold sala-nome">{{ sala.nome }}</td>
-                                            <td>{{ sala.andar }}</td>
+                                            <td class="sala-andar">{{ sala.andar }}</td>
                                             <td class="sala-capacidade">{{ sala.capacidade }} pessoas</td>
                                             <td>
                                                 {% if sala.status == "Disponivel" %}

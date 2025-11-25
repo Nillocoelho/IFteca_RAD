@@ -8,6 +8,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const emailInput = document.getElementById("email");
   const passwordInput = document.getElementById("password");
   const feedback = document.getElementById("loginFeedback");
+  const params = new URLSearchParams(window.location.search);
+  const nextUrl = params.get("next") || "/admin/salas/";
 
   if (window.lucide) {
     window.lucide.createIcons();
@@ -51,7 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
       feedback.textContent = "Login realizado com sucesso. Redirecionando...";
       feedback.className = "alert alert-success";
       setTimeout(() => {
-        window.location.href = "/salas/listar/";
+        window.location.href = nextUrl;
       }, 600);
     } catch (error) {
       console.error("Erro ao autenticar", error);

@@ -130,6 +130,9 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Redirecionamento de login para a tela personalizada
+LOGIN_URL = '/login/'
+
 
 # --------------------------
 # LOGIN POR E-MAIL (opcional)

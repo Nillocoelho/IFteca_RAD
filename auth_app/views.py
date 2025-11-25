@@ -1,5 +1,5 @@
+from django.contrib.auth import login
 from django.shortcuts import render
-from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -18,6 +18,8 @@ class LoginView(APIView):
         serializer.is_valid(raise_exception=True)
 
         user = serializer.validated_data["user"]
+        # Autentica na sessao para que rotas protegidas por login_required funcionem
+        login(request, user)
 
         token, created = Token.objects.get_or_create(user=user)
 

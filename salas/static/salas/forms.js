@@ -43,6 +43,10 @@ function bindSalaForm(formSelector, options = {}) {
     const nome = (formData.get("nome") || "").toString().trim();
     const capacidadeValue = formData.get("capacidade");
     const tipo = (formData.get("tipo") || "").toString().trim();
+    const localizacao = (formData.get("localizacao") || formData.get("andar") || "").toString().trim();
+    const status = (formData.get("status") || "Disponivel").toString().trim();
+    const equipamentosRaw = (formData.get("equipamentos") || "").toString().trim();
+    const descricao = (formData.get("descricao") || formData.get("descrição") || "").toString().trim();
 
     const clientErrors = [];
     if (!nome) clientErrors.push("Preencha o nome da sala.");
@@ -53,7 +57,7 @@ function bindSalaForm(formSelector, options = {}) {
     }
 
     if (!tipo) clientErrors.push("Selecione o tipo da sala.");
-    console.debug(`${logPrefix}: submissão iniciada`, { nome, capacidade, tipo });
+    console.debug(`${logPrefix}: submissão iniciada`, { nome, capacidade, tipo, localizacao, status });
 
     if (clientErrors.length) {
       console.warn(`${logPrefix}: bloqueado por validação do cliente`, clientErrors);
@@ -61,7 +65,14 @@ function bindSalaForm(formSelector, options = {}) {
       return;
     }
 
-    console.debug(`${logPrefix}: enviando payload para API`, { nome, capacidade, tipo });
+    const payloadBody = { nome, capacidade, tipo };
+    if (localizacao) payloadBody.localizacao = localizacao;
+    if (equipamentosRaw) {
+      payloadBody.equipamentos = equipamentosRaw.split(",").map((s) => s.trim()).filter(Boolean);
+    }
+    if (status) payloadBody.status = status;
+    if (descricao) payloadBody.descricao = descricao;
+    console.debug(`${logPrefix}: enviando payload para API`, payloadBody);
     try {
       // Determine mode: prefer explicit data-mode on form (set when opening modal),
       // fallback to hidden input `#modalSalaId` value if present.
@@ -73,17 +84,6 @@ function bindSalaForm(formSelector, options = {}) {
         url = `/api/salas/${id}/`;
         method = "PUT";
       }
-
-      // collect optional fields
-      const localizacao = (formData.get("localizacao") || "").toString().trim();
-      const equipamentosRaw = (formData.get("equipamentos") || "").toString().trim();
-      const equipamentos = equipamentosRaw ? equipamentosRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
-      const status = (formData.get("status") || "Disponivel").toString().trim();
-
-      const payloadBody = { nome, capacidade, tipo };
-      if (localizacao) payloadBody.localizacao = localizacao;
-      if (equipamentos.length) payloadBody.equipamentos = equipamentos;
-      if (status) payloadBody.status = status;
 
       const response = await fetch(url, {
         method,
@@ -369,6 +369,34 @@ window.addEventListener("DOMContentLoaded", () => {
         const existingEmpty = tbody.querySelector(".js-empty-row");
         if (existingEmpty) existingEmpty.remove();
       }
+    });
+  }
+
+  // Se a URL contiver ?openModal=1, abre o modal de criação/edição
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("openModal") === "1") {
+    const modalEl = document.getElementById("modalSala");
+    if (modalEl && window.bootstrap) {
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+    }
+  }
+
+  // Sempre que o modal fecha, limpamos campos/feedback e voltamos para modo "Adicionar"
+  const modalEl = document.getElementById("modalSala");
+  if (modalEl) {
+    modalEl.addEventListener("hidden.bs.modal", () => {
+      const form = document.getElementById("modalSalaForm");
+      form?.reset();
+      const errors = document.getElementById("modalErrors");
+      const success = document.getElementById("modalSuccess");
+      errors?.parentElement?.classList.add("d-none");
+      if (errors) errors.innerHTML = "";
+      success?.classList.add("d-none");
+      const label = document.getElementById("modalSalaLabel");
+      if (label) label.textContent = "Adicionar Nova Sala";
+      const idField = document.getElementById("modalSalaId");
+      if (idField) idField.value = "";
     });
   }
 });
