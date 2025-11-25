@@ -18,6 +18,107 @@ def admin_required(view_func):
     return login_required(user_passes_test(_is_admin, login_url="/login/")(view_func))
 
 
+def _infer_andar(nome: str) -> str:
+    nome = (nome or "").lower()
+    if any(code in nome for code in ["101", "102", "103"]):
+        return "1o Andar - Bloco A"
+    if any(code in nome for code in ["201", "202", "203"]):
+        return "2o Andar - Bloco B"
+    return "1o Andar - Bloco A"
+
+
+@require_GET
+def listar_salas(request):
+    # Lista de salas visivel para alunos. Usa dados reais, mas apresenta estado estatico de usuario.
+    salas_qs = Sala.objects.all()
+    salas = []
+    for sala in salas_qs:
+        equipamentos = getattr(sala, "equipamentos", []) or []
+        status_label = getattr(sala, "status", "Disponivel") or "Disponivel"
+        salas.append(
+            {
+                "id": sala.id,
+                "nome": sala.nome,
+                "andar": sala.localizacao or _infer_andar(sala.nome),
+                "capacidade": sala.capacidade,
+                "status": status_label,
+                "status_class": "",
+                "equipamentos": equipamentos,
+            }
+        )
+
+    if not salas:
+        salas = [
+            {
+                "id": 101,
+                "nome": "Sala 101",
+                "andar": "1o Andar - Bloco A",
+                "capacidade": 20,
+                "status": "Disponivel",
+                "status_class": "",
+                "equipamentos": ["Projetor", "Quadro branco", "Ar condicionado"],
+            },
+            {
+                "id": 102,
+                "nome": "Sala 102",
+                "andar": "1o Andar - Bloco A",
+                "capacidade": 15,
+                "status": "Disponivel",
+                "status_class": "",
+                "equipamentos": ["Quadro branco", "Ar condicionado"],
+            },
+            {
+                "id": 103,
+                "nome": "Sala 103",
+                "andar": "1o Andar - Bloco A",
+                "capacidade": 25,
+                "status": "Ocupada",
+                "status_class": "",
+                "equipamentos": ["Projetor", "Quadro branco", "Ar condicionado", "TV"],
+            },
+            {
+                "id": 201,
+                "nome": "Sala 201",
+                "andar": "2o Andar - Bloco B",
+                "capacidade": 30,
+                "status": "Disponivel",
+                "status_class": "",
+                "equipamentos": ["Projetor", "Quadro branco", "Ar condicionado", "Computadores"],
+            },
+            {
+                "id": 202,
+                "nome": "Sala 202",
+                "andar": "2o Andar - Bloco B",
+                "capacidade": 12,
+                "status": "Em Manutencao",
+                "status_class": "",
+                "equipamentos": ["Quadro branco"],
+            },
+            {
+                "id": 203,
+                "nome": "Sala 203",
+                "andar": "2o Andar - Bloco B",
+                "capacidade": 18,
+                "status": "Disponivel",
+                "status_class": "",
+                "equipamentos": ["Projetor", "Quadro branco", "Ar condicionado"],
+            },
+        ]
+
+    student_name = (
+        getattr(request.user, "get_full_name", lambda: "")() or getattr(request.user, "username", "") or "Aluno convidado"
+    )
+
+    return render(
+        request,
+        "salas/listar_salas.html",
+        {
+            "salas": salas,
+            "student_name": student_name,
+        },
+    )
+
+
 @admin_required
 @require_GET
 def api_lookup_sala(request):
@@ -46,14 +147,6 @@ def gerenciar_salas(request):
     # Lista salas reais e complementa com dados de exibicao (andar/status/equipamentos) para a UI.
     salas_qs = Sala.objects.all()
 
-    def infer_andar(nome: str) -> str:
-        nome = (nome or "").lower()
-        if any(code in nome for code in ["101", "102", "103"]):
-            return "1o Andar - Bloco A"
-        if any(code in nome for code in ["201", "202", "203"]):
-            return "2o Andar - Bloco B"
-        return "1o Andar - Bloco A"
-
     salas = []
     for sala in salas_qs:
         equipamentos = getattr(sala, 'equipamentos', []) or []
@@ -63,7 +156,7 @@ def gerenciar_salas(request):
             {
                 "id": sala.id,
                 "nome": sala.nome,
-                "andar": sala.localizacao or infer_andar(sala.nome),
+                "andar": sala.localizacao or _infer_andar(sala.nome),
                 "tipo": getattr(sala, "tipo", ""),
                 "descricao": descricao,
                 "capacidade": sala.capacidade,

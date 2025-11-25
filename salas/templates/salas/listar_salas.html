@@ -1,0 +1,119 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salas de Estudo - IFTECA</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{% static 'salas/listar_salas.css' %}">
+</head>
+<body class="salas-page">
+    <header class="topbar shadow-sm">
+        <div class="brand">
+            <div class="brand-logo">
+                <i data-lucide="building-2"></i>
+            </div>
+            <div>
+                <div class="brand-title">IFTECA</div>
+                <div class="brand-subtitle">Sistema de Reserva de Salas - IFPB</div>
+            </div>
+        </div>
+        <div class="user-info">
+            <div class="user-name">
+                <i data-lucide="user-round"></i>
+                <span>{{ student_name|default:"Aluno convidado" }}</span>
+            </div>
+            <a class="logout-link" href="#" onclick="return false;">Sair</a>
+        </div>
+    </header>
+
+    <main class="page-shell container-xxl">
+        <a href="#" class="back-link" onclick="return false;">
+            <i data-lucide="arrow-left"></i>
+            <span>Voltar ao Dashboard</span>
+        </a>
+
+        <section class="page-header">
+            <div class="page-title">
+                <h1>Salas de Estudo</h1>
+                <p>Escolha uma sala para verificar disponibilidade e fazer sua reserva</p>
+            </div>
+            <div class="filters-row">
+                <div class="search-box">
+                    <i data-lucide="search"></i>
+                    <input id="searchRoom" type="search" placeholder="Buscar sala..." aria-label="Buscar sala">
+                </div>
+                <div class="actions">
+                    <div class="filter-toggle">
+                        <button class="filter-btn active" data-filter="all" type="button">Todas</button>
+                        <button class="filter-btn" data-filter="available" type="button">Disponiveis</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="rooms-grid">
+            <div class="row g-4" id="roomsGrid">
+                {% for sala in salas %}
+                    <div class="col-12 col-md-6 col-lg-6 room-wrapper">
+                        <article
+                            class="room-card h-100"
+                            data-status="{{ sala.status }}"
+                            data-search="{{ sala.nome }} {{ sala.andar }} {{ sala.capacidade }} {% for equip in sala.equipamentos %}{{ equip }} {% endfor %}"
+                        >
+                            <header class="room-card__header">
+                                <div class="room-icon">
+                                    <i data-lucide="panel-right-open"></i>
+                                </div>
+                                <div class="room-title">
+                                    <div class="room-name">{{ sala.nome }}</div>
+                                    <div class="room-location">{{ sala.andar }}</div>
+                                </div>
+                                <span class="status-pill status-{{ sala.status|slugify }}">
+                                    {{ sala.status }}
+                                </span>
+                            </header>
+
+                            <div class="room-card__body">
+                                <div class="room-meta">
+                                    <i data-lucide="users"></i>
+                                    <span>Capacidade: {{ sala.capacidade }} pessoas</span>
+                                </div>
+                                <div class="room-meta">
+                                    <i data-lucide="settings"></i>
+                                    <div class="equip-list">
+                                        {% for equip in sala.equipamentos %}
+                                            <span class="equip-chip">{{ equip }}</span>
+                                        {% empty %}
+                                            <span class="equip-chip muted">Sem equipamentos cadastrados</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <footer class="room-card__footer">
+                                {% if sala.status == "Disponivel" %}
+                                    <button class="cta" type="button">Ver Disponibilidade</button>
+                                {% elif sala.status == "Ocupada" %}
+                                    <button class="cta disabled" type="button" disabled>Sala Ocupada</button>
+                                {% else %}
+                                    <button class="cta disabled maintenance" type="button" disabled>Em Manutencao</button>
+                                {% endif %}
+                            </footer>
+                        </article>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div id="noResults" class="no-results d-none">
+                <i data-lucide="search"></i>
+                <p>Nenhuma sala encontrada com os filtros atuais.</p>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="{% static 'salas/listar_salas.js' %}"></script>
+</body>
+</html>
