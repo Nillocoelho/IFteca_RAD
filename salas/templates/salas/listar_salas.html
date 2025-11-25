@@ -56,7 +56,7 @@
         <section class="rooms-grid">
             <div class="row g-4" id="roomsGrid">
                 {% for sala in salas %}
-                    <div class="col-12 col-md-6 col-lg-6 room-wrapper">
+                    <div class="col-12 col-md-6 col-lg-4 room-wrapper">
                         <article
                             class="room-card h-100"
                             data-status="{{ sala.status }}"
@@ -104,6 +104,16 @@
                         </article>
                     </div>
                 {% endfor %}
+            </div>
+
+            <div class="pagination-row d-none" id="paginationRow">
+                <button class="page-btn" id="prevPage" type="button" aria-label="Página anterior">
+                    <i data-lucide="chevron-left"></i>
+                </button>
+                <span id="pageIndicator" class="page-indicator">1/1</span>
+                <button class="page-btn" id="nextPage" type="button" aria-label="Próxima página">
+                    <i data-lucide="chevron-right"></i>
+                </button>
             </div>
 
             <div id="noResults" class="no-results d-none">
