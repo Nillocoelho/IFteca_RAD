@@ -83,9 +83,17 @@ body.salas-page {
 }
 
 .logout-link {
-    color: #c62828;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--gray-600);
     text-decoration: none;
     font-weight: 600;
+}
+
+.logout-link i {
+    width: 18px;
+    height: 18px;
 }
 
 .page-shell {
