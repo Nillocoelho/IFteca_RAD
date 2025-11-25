@@ -1,9 +1,11 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from .serializers import LoginSerializer
 from django.contrib.auth import authenticate
+from django.shortcuts import render
+from rest_framework import status
 from rest_framework.authtoken.models import Token
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .serializers import LoginSerializer
 
 class LoginView(APIView):
 
@@ -33,3 +35,7 @@ class LoginView(APIView):
             "user_id": user.id,
             "email": user.email,
         })
+
+
+def login_page(request):
+    return render(request, "auth_app/login.html")

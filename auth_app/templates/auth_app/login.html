@@ -1,0 +1,79 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - IFTECA</title>
+    <link rel="stylesheet" href="{% static 'auth_app/login.css' %}">
+</head>
+<body>
+    <div class="login-shell">
+        <header class="login-brand">
+            <div class="login-logo">
+                <i data-lucide="building-2"></i>
+            </div>
+            <h1 class="login-title">IFTECA</h1>
+            <p class="login-subtitle">
+                Sistema de Reserva de Salas de Estudo<br />
+                Instituto Federal da Paraiba
+            </p>
+        </header>
+
+        <main class="login-card">
+            <h2>Entrar no Sistema</h2>
+            <form id="loginForm" novalidate>
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="email">E-mail Institucional</label>
+                    <i data-lucide="mail" class="input-icon"></i>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        class="form-control"
+                        placeholder="seu.email@academico.ifpb.edu.br"
+                        required
+                    />
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Senha</label>
+                    <i data-lucide="lock" class="input-icon"></i>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        class="form-control"
+                        placeholder="••••••••"
+                        required
+                    />
+                </div>
+
+                <div id="loginFeedback" class="alert d-none" role="alert"></div>
+
+                <button type="submit" class="btn-primary-ifpb">Entrar</button>
+
+                <div class="login-link">
+                    Nao tem uma conta?
+                    <a href="#" id="registerLink">Cadastre-se aqui</a>
+                </div>
+            </form>
+        </main>
+
+        <footer class="login-footer">
+            © 2025 IFPB - Instituto Federal da Paraiba
+        </footer>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="{% static 'auth_app/login.js' %}"></script>
+    <script>
+        // Placeholder para navegar para cadastro quando existir rota real
+        document.getElementById("registerLink")?.addEventListener("click", (event) => {
+            event.preventDefault();
+            alert("Tela de cadastro nao configurada nesta versao.");
+        });
+    </script>
+</body>
+</html>

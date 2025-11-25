@@ -259,7 +259,7 @@ window.addEventListener("DOMContentLoaded", () => {
               row.dataset.id = id;
             } else {
               // não encontrou ou ambíguo
-              alert("Nao foi possivel identificar o registro para edicao.");
+              alert("Não foi possivel identificar o registro para edicão.");
               return;
             }
           } catch (err) {
@@ -313,7 +313,7 @@ window.addEventListener("DOMContentLoaded", () => {
               id = json.id;
               row.dataset.id = id;
             } else {
-              alert("Nao foi possivel identificar o registro para exclusao.");
+              alert("Não foi possivel identificar o registro para exclusão.");
               return;
             }
           } catch (err) {
