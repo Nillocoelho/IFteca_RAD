@@ -97,11 +97,11 @@
 
                             <footer class="room-card__footer">
                                 {% if sala.status == "Disponivel" %}
-                                    <button class="cta" type="button">Ver Disponibilidade</button>
+                                    <a class="cta" href="{% url 'detalhar_sala' sala.id %}">Ver Disponibilidade</a>
                                 {% elif sala.status == "Ocupada" %}
-                                    <button class="cta disabled" type="button" disabled>Sala Ocupada</button>
+                                    <span class="cta disabled">Sala Ocupada</span>
                                 {% else %}
-                                    <button class="cta disabled maintenance" type="button" disabled>Em Manutencao</button>
+                                    <span class="cta disabled maintenance">Em Manutencao</span>
                                 {% endif %}
                             </footer>
                         </article>

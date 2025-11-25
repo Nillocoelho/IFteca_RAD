@@ -48,62 +48,7 @@ def listar_salas(request):
         )
 
     if not salas:
-        salas = [
-            {
-                "id": 101,
-                "nome": "Sala 101",
-                "andar": "1o Andar - Bloco A",
-                "capacidade": 20,
-                "status": "Disponivel",
-                "status_class": "",
-                "equipamentos": ["Projetor", "Quadro branco", "Ar condicionado"],
-            },
-            {
-                "id": 102,
-                "nome": "Sala 102",
-                "andar": "1o Andar - Bloco A",
-                "capacidade": 15,
-                "status": "Disponivel",
-                "status_class": "",
-                "equipamentos": ["Quadro branco", "Ar condicionado"],
-            },
-            {
-                "id": 103,
-                "nome": "Sala 103",
-                "andar": "1o Andar - Bloco A",
-                "capacidade": 25,
-                "status": "Ocupada",
-                "status_class": "",
-                "equipamentos": ["Projetor", "Quadro branco", "Ar condicionado", "TV"],
-            },
-            {
-                "id": 201,
-                "nome": "Sala 201",
-                "andar": "2o Andar - Bloco B",
-                "capacidade": 30,
-                "status": "Disponivel",
-                "status_class": "",
-                "equipamentos": ["Projetor", "Quadro branco", "Ar condicionado", "Computadores"],
-            },
-            {
-                "id": 202,
-                "nome": "Sala 202",
-                "andar": "2o Andar - Bloco B",
-                "capacidade": 12,
-                "status": "Em Manutencao",
-                "status_class": "",
-                "equipamentos": ["Quadro branco"],
-            },
-            {
-                "id": 203,
-                "nome": "Sala 203",
-                "andar": "2o Andar - Bloco B",
-                "capacidade": 18,
-                "status": "Disponivel",
-                "status_class": "",
-                "equipamentos": ["Projetor", "Quadro branco", "Ar condicionado"],
-            },
-        ]
+        salas = [ {k: v for k, v in sala.items() if k != "descricao"} for sala in _fallback_salas() ]
 
     student_name = (
         getattr(request.user, "get_full_name", lambda: "")() or getattr(request.user, "username", "") or "Aluno convidado"
@@ -117,6 +62,112 @@ def listar_salas(request):
             "student_name": student_name,
         },
     )
+
+
+@require_GET
+def detalhar_sala(request, sala_id: int):
+    """Tela de detalhe/agenda da sala."""
+    fallback = _fallback_salas()
+    try:
+        sala_obj = Sala.objects.get(id=sala_id)
+        sala = {
+            "id": sala_obj.id,
+            "nome": sala_obj.nome,
+            "andar": sala_obj.localizacao or _infer_andar(sala_obj.nome),
+            "status": getattr(sala_obj, "status", "Disponivel") or "Disponivel",
+            "capacidade": sala_obj.capacidade,
+            "descricao": getattr(sala_obj, "descricao", "") or "Sala de estudo.",
+            "equipamentos": getattr(sala_obj, "equipamentos", []) or [],
+        }
+    except Sala.DoesNotExist:
+        sala = next((s for s in fallback if s["id"] == sala_id), None)
+        if not sala:
+            return redirect("listar_salas")
+
+    slots = [
+        {"range": "08:00 - 10:00", "status": "disponivel"},
+        {"range": "10:00 - 12:00", "status": "ocupado"},
+        {"range": "12:00 - 14:00", "status": "disponivel"},
+        {"range": "14:00 - 16:00", "status": "disponivel"},
+        {"range": "16:00 - 18:00", "status": "ocupado"},
+        {"range": "18:00 - 20:00", "status": "disponivel"},
+        {"range": "20:00 - 22:00", "status": "disponivel"},
+    ]
+
+    student_name = (
+        getattr(request.user, "get_full_name", lambda: "")() or getattr(request.user, "username", "") or "Aluno convidado"
+    )
+
+    return render(
+        request,
+        "salas/detalhar_sala.html",
+        {"sala": sala, "slots": slots, "student_name": student_name},
+    )
+
+
+def _fallback_salas():
+    return [
+        {
+            "id": 101,
+            "nome": "Sala 101",
+            "andar": "1o Andar - Bloco A",
+            "capacidade": 20,
+            "status": "Disponivel",
+            "status_class": "",
+            "equipamentos": ["Projetor", "Quadro branco", "Ar condicionado"],
+            "descricao": "Sala ampla e bem iluminada, ideal para grupos de estudo.",
+        },
+        {
+            "id": 102,
+            "nome": "Sala 102",
+            "andar": "1o Andar - Bloco A",
+            "capacidade": 15,
+            "status": "Disponivel",
+            "status_class": "",
+            "equipamentos": ["Quadro branco", "Ar condicionado"],
+            "descricao": "Ambiente silencioso para ate 15 pessoas.",
+        },
+        {
+            "id": 103,
+            "nome": "Sala 103",
+            "andar": "1o Andar - Bloco A",
+            "capacidade": 25,
+            "status": "Ocupada",
+            "status_class": "",
+            "equipamentos": ["Projetor", "Quadro branco", "Ar condicionado", "TV"],
+            "descricao": "Sala com TV e projetor para apresentacoes.",
+        },
+        {
+            "id": 201,
+            "nome": "Sala 201",
+            "andar": "2o Andar - Bloco B",
+            "capacidade": 30,
+            "status": "Disponivel",
+            "status_class": "",
+            "equipamentos": ["Projetor", "Quadro branco", "Ar condicionado", "Computadores"],
+            "descricao": "Laboratorio com computadores.",
+        },
+        {
+            "id": 202,
+            "nome": "Sala 202",
+            "andar": "2o Andar - Bloco B",
+            "capacidade": 12,
+            "status": "Em Manutencao",
+            "status_class": "",
+            "equipamentos": ["Quadro branco"],
+            "descricao": "Sala em manutencao.",
+        },
+        {
+            "id": 203,
+            "nome": "Sala 203",
+            "andar": "2o Andar - Bloco B",
+            "capacidade": 18,
+            "status": "Disponivel",
+            "status_class": "",
+            "equipamentos": ["Projetor", "Quadro branco", "Ar condicionado"],
+            "descricao": "Sala versatil para estudos.",
+        },
+    ]
 
 
 @admin_required

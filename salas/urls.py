@@ -5,6 +5,7 @@ from . import views
 urlpatterns = [
     # Area do aluno
     path("salas/", views.listar_salas, name="listar_salas"),
+    path("salas/<int:sala_id>/", views.detalhar_sala, name="detalhar_sala"),
 
     # Area admin
     path("admin/salas/", views.gerenciar_salas, name="gerenciar_salas"),
