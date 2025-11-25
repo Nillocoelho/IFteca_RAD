@@ -1,9 +1,15 @@
 import json
+import logging
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
 
-from .models import Sala, Reserva
+# Use the canonical Sala model from the `salas` app to avoid duplication
+from salas.models import Sala
+from .models import Reserva
+
+logger = logging.getLogger(__name__)
 
 
 # ============================================
@@ -20,6 +26,7 @@ def salas_admin(request):
 
     # --------------- GET lista ---------------
     if request.method == "GET":
+        logger.info("salas_admin GET recebido")
         salas = Sala.objects.all().order_by("nome")
 
         data = [
@@ -29,21 +36,28 @@ def salas_admin(request):
                 "capacidade": s.capacidade,
                 "tipo": s.tipo,
                 "localizacao": s.localizacao,
+                "equipamentos": getattr(s, 'equipamentos', []),
+                "status": getattr(s, 'status', 'Disponivel'),
             }
             for s in salas
         ]
+        logger.info("salas_admin GET retornando %s salas", len(data))
         return JsonResponse(data, safe=False, status=200)
 
     # --------------- POST cria ---------------
     if request.method == "POST":
         try:
-            data = json.loads(request.body.decode("utf-8"))
+            raw_body = request.body.decode("utf-8")
+            logger.info("salas_admin POST recebido com body cru: %s", raw_body)
+            data = json.loads(raw_body)
         except json.JSONDecodeError:
+            logger.warning("salas_admin POST com JSON inválido", exc_info=True)
             return JsonResponse({"detail": "JSON inválido."}, status=400)
 
-        required = ["nome", "capacidade", "tipo", "localizacao"]
+        required = ["nome", "capacidade", "tipo"]
         missing = [f for f in required if f not in data]
         if missing:
+            logger.warning("salas_admin POST faltando campos obrigatórios: %s", missing)
             return JsonResponse(
                 {"detail": f"Campos obrigatórios faltando: {', '.join(missing)}"},
                 status=400,
@@ -51,6 +65,7 @@ def salas_admin(request):
 
         # Nome único
         if Sala.objects.filter(nome=data["nome"]).exists():
+            logger.warning("salas_admin POST duplicado para nome='%s'", data["nome"])
             return JsonResponse({"detail": "Já existe uma sala com esse nome."}, status=400)
 
         # Capacidade
@@ -59,6 +74,7 @@ def salas_admin(request):
             if capacidade <= 0:
                 raise ValueError
         except (TypeError, ValueError):
+            logger.warning("salas_admin POST capacidade inválida: %s", data.get("capacidade"))
             return JsonResponse(
                 {"detail": "Capacidade deve ser um inteiro positivo."},
                 status=400,
@@ -67,18 +83,36 @@ def salas_admin(request):
         # Tipo
         tipos_validos = dict(Sala.TIPO_CHOICES).keys()
         if data["tipo"] not in tipos_validos:
+            logger.warning("salas_admin POST tipo inválido: %s", data["tipo"])
             return JsonResponse(
                 {"detail": "Tipo inválido. Valores aceitos: " + ", ".join(tipos_validos)},
                 status=400,
             )
 
+        # Localização (opcional)
+        localizacao = data.get("localizacao")
+
+        equipamentos = data.get('equipamentos') or []
+        if isinstance(equipamentos, str):
+            equipamentos = [e.strip() for e in equipamentos.split(',') if e.strip()]
+        status = data.get('status') or 'Disponivel'
+
         sala = Sala.objects.create(
             nome=data["nome"],
             capacidade=capacidade,
             tipo=data["tipo"],
-            localizacao=data["localizacao"],
+            localizacao=localizacao,
+            equipamentos=equipamentos,
+            status=status,
         )
 
+        logger.info(
+            "sala criada com sucesso id=%s nome='%s' capacidade=%s tipo=%s",
+            sala.id,
+            sala.nome,
+            sala.capacidade,
+            sala.tipo,
+        )
         return JsonResponse(
             {
                 "id": sala.id,
@@ -120,7 +154,6 @@ def atualizar_sala(request, sala_id):
     nome = data.get("nome", sala.nome)
     capacidade = data.get("capacidade", sala.capacidade)
     tipo = data.get("tipo", sala.tipo)
-    localizacao = data.get("localizacao", sala.localizacao)
 
     # Nome duplicado
     if Sala.objects.filter(nome=nome).exclude(id=sala.id).exists():
@@ -148,7 +181,6 @@ def atualizar_sala(request, sala_id):
     sala.nome = nome
     sala.capacidade = capacidade
     sala.tipo = tipo
-    sala.localizacao = localizacao
     sala.save()
 
     return JsonResponse(
@@ -183,7 +215,7 @@ def deletar_sala(request, sala_id):
         return JsonResponse({"detail": "Sala não encontrada."}, status=404)
 
     # CA2 — regra crítica: bloquear exclusão se houver reservas futuras
-    if Reserva.objects.filter(sala=sala, data__gt=models.functions.Now()).exists():
+    if Reserva.objects.filter(sala=sala, inicio__gt=timezone.now()).exists():
         return JsonResponse(
             {"detail": "A sala possui reservas futuras e não pode ser excluída."},
             status=400,

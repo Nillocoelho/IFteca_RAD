@@ -137,3 +137,24 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
+
+
+# --------------------------
+# LOGGING BÁSICO PARA DEBUG
+# --------------------------
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        # habilita INFO e acima para app reservas
+        'reservas': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+    },
+}

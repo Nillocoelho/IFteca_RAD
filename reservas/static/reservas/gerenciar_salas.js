@@ -4,11 +4,16 @@ const API_BASE=(document.body.dataset.apiBase||"/reservas/admin/salas/").replace
 const listUrl=`${API_BASE}/`;
 const detailUrl=id=>`${API_BASE}/${id}/`;
 const deleteUrl=id=>`${API_BASE}/${id}/delete/`;
+console.info("[salas-ui] API_BASE detectado", {API_BASE, listUrl});
 
 async function fetchSalas(){
+  console.info("[salas-ui] requisitando lista de salas", {url:listUrl});
   const res=await fetch(listUrl,{credentials:"same-origin"});
-  if(!res.ok) return [];
-  return await res.json();
+  console.info("[salas-ui] resposta lista de salas", {status:res.status});
+  if(!res.ok){console.warn("[salas-ui] falha ao listar salas", {status:res.status});return []}
+  const data=await res.json();
+  console.info("[salas-ui] lista carregada", {total:data.length});
+  return data;
 }
 
 function renderSalaRow(s){
@@ -48,6 +53,7 @@ function renderSalaRow(s){
 async function loadAndRender(){
   const body=document.getElementById('salasTableBody');
   const arr=await fetchSalas();
+  console.info("[salas-ui] renderizando tabela", {total:arr.length});
   body.innerHTML='';
   if(!arr.length){body.innerHTML='<tr class="js-empty-row"><td colspan="6" class="text-center text-muted py-4">Nenhuma sala cadastrada ainda.</td></tr>';return}
   arr.forEach(s=>body.appendChild(renderSalaRow(s)));
@@ -66,21 +72,23 @@ document.addEventListener('DOMContentLoaded',()=>{
     const id=document.getElementById('modalSalaId').value;
     const payload={nome:document.getElementById('modalNome').value,capacidade:document.getElementById('modalCapacidade').value,tipo:document.getElementById('modalTipo').value,localizacao:document.getElementById('modalAndar').value};
     const csrf=getCsrfToken();
+    console.info("[salas-ui] submit sala", {id, payload});
     try{
       let res;
       if(id){res=await fetch(detailUrl(id),{method:'PUT',headers:{'Content-Type':'application/json','X-CSRFToken':csrf},body:JSON.stringify(payload)});}else{res=await fetch(listUrl,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrf},body:JSON.stringify(payload)});}
-      if(!res.ok){const data=await res.json();showErrors([data.detail||'Erro']);return}
+      console.info("[salas-ui] resposta ao salvar sala", {status:res.status});
+      if(!res.ok){const data=await res.json();console.warn("[salas-ui] erro ao salvar sala", {status:res.status, body:data});showErrors([data.detail||'Erro']);return}
       // success
       const bsModal=bootstrap.Modal.getInstance(document.getElementById('modalSala'));
       bsModal?.hide();
       loadAndRender();
-    }catch(err){showErrors(['Erro de rede'])}
+    }catch(err){console.error("[salas-ui] falha de rede ao salvar sala", err);showErrors(['Erro de rede'])}
   });
 
   document.getElementById('salasTableBody')?.addEventListener('click',async(e)=>{
     const edit=e.target.closest('.btn-edit');
     const del=e.target.closest('.btn-delete');
-    if(edit){const id=edit.dataset.id;const tr=document.querySelector(`tr[data-id="${id}"]`);document.getElementById('modalTitle').textContent='Editar Sala';document.getElementById('modalNome').value=tr.querySelector('.sala-nome').textContent;document.getElementById('modalCapacidade').value=tr.querySelector('.sala-capacidade').textContent.replace(/\D/g,'');document.getElementById('modalAndar').value=tr.querySelector('.sala-andar').textContent;document.getElementById('modalSalaId').value=id;new bootstrap.Modal(document.getElementById('modalSala')).show();return}
-    if(del){if(!confirm('Tem certeza que deseja excluir esta sala?')) return;const id=del.dataset.id;const csrf=getCsrfToken();const res=await fetch(deleteUrl(id),{method:'DELETE',headers:{'X-CSRFToken':csrf}});if(!res.ok){alert('Erro ao excluir');return}loadAndRender();}
+    if(edit){const id=edit.dataset.id;console.info("[salas-ui] editar sala acionado", {id});const tr=document.querySelector(`tr[data-id="${id}"]`);document.getElementById('modalTitle').textContent='Editar Sala';document.getElementById('modalNome').value=tr.querySelector('.sala-nome').textContent;document.getElementById('modalCapacidade').value=tr.querySelector('.sala-capacidade').textContent.replace(/\D/g,'');document.getElementById('modalAndar').value=tr.querySelector('.sala-andar').textContent;document.getElementById('modalSalaId').value=id;new bootstrap.Modal(document.getElementById('modalSala')).show();return}
+    if(del){if(!confirm('Tem certeza que deseja excluir esta sala?')) return;const id=del.dataset.id;console.info("[salas-ui] solicitando exclusão da sala", {id});const csrf=getCsrfToken();const res=await fetch(deleteUrl(id),{method:'DELETE',headers:{'X-CSRFToken':csrf}});console.info("[salas-ui] resposta exclusão", {status:res.status});if(!res.ok){alert('Erro ao excluir');return}loadAndRender();}
   });
 });

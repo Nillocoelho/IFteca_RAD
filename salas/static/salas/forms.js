@@ -12,6 +12,8 @@ function bindSalaForm(formSelector, options = {}) {
 
   const successBox = document.querySelector(options.successSelector || "");
   const errorBox = document.querySelector(options.errorSelector || "");
+  const logPrefix = options.logPrefix || `[SalaForm ${form.id || formSelector}]`;
+  console.debug(`${logPrefix}: vinculado e pronto para envio.`);
 
   const showErrors = (messages) => {
     if (!errorBox) return;
@@ -51,37 +53,81 @@ function bindSalaForm(formSelector, options = {}) {
     }
 
     if (!tipo) clientErrors.push("Selecione o tipo da sala.");
+    console.debug(`${logPrefix}: submissão iniciada`, { nome, capacidade, tipo });
 
     if (clientErrors.length) {
+      console.warn(`${logPrefix}: bloqueado por validação do cliente`, clientErrors);
       showErrors(clientErrors);
       return;
     }
 
+    console.debug(`${logPrefix}: enviando payload para API`, { nome, capacidade, tipo });
     try {
-      const response = await fetch("/api/salas/", {
-        method: "POST",
+      // Determine mode: prefer explicit data-mode on form (set when opening modal),
+      // fallback to hidden input `#modalSalaId` value if present.
+      const formMode = form.dataset.mode || (form.querySelector('#modalSalaId')?.value ? 'edit' : 'create');
+      const id = form.querySelector('#modalSalaId')?.value;
+      let url = "/api/salas/";
+      let method = "POST";
+      if (formMode === 'edit' && id) {
+        url = `/api/salas/${id}/`;
+        method = "PUT";
+      }
+
+      // collect optional fields
+      const localizacao = (formData.get("localizacao") || "").toString().trim();
+      const equipamentosRaw = (formData.get("equipamentos") || "").toString().trim();
+      const equipamentos = equipamentosRaw ? equipamentosRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+      const status = (formData.get("status") || "Disponivel").toString().trim();
+
+      const payloadBody = { nome, capacidade, tipo };
+      if (localizacao) payloadBody.localizacao = localizacao;
+      if (equipamentos.length) payloadBody.equipamentos = equipamentos;
+      if (status) payloadBody.status = status;
+
+      const response = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
           "X-CSRFToken": getCsrfToken(form),
         },
         credentials: "same-origin",
-        body: JSON.stringify({ nome, capacidade, tipo }),
+        body: JSON.stringify(payloadBody),
       });
 
-      const data = await response.json();
+      let data = null;
+      try {
+        // nem sempre o servidor retorna JSON (ex: 405 vazia); proteger parsing
+        data = await response.json();
+      } catch (err) {
+        console.debug(`${logPrefix}: resposta sem JSON`, err);
+        data = null;
+      }
 
       if (!response.ok) {
-        showErrors(data.errors || ["Erro ao salvar a sala."]);
+        console.warn(`${logPrefix}: erro da API ao cadastrar sala`, { status: response.status, data });
+        const errors = data && data.errors ? data.errors : [data && data.message ? data.message : "Erro ao salvar a sala."];
+        showErrors(errors);
         return;
       }
 
       form.reset();
-      showSuccess(data.message || "Sala cadastrada com sucesso.");
+      // reset edit mode marker
+      delete form.dataset.mode;
+      // reset submit button text if it was altered
+      const submitBtn = form.querySelector('button[type="submit"]');
+      if (submitBtn) submitBtn.textContent = options.createButtonText || 'Adicionar Sala';
+
+      // message differs between create and edit
+      const defaultMessage = method === 'PUT' ? 'Sala atualizada com sucesso.' : 'Sala cadastrada com sucesso.';
+      showSuccess(data.message || defaultMessage);
+      console.info(`${logPrefix}: sala cadastrada com sucesso`, data.sala);
 
       if (typeof options.onSuccess === "function") {
         options.onSuccess(data.sala);
       }
     } catch (error) {
+      console.error(`${logPrefix}: falha inesperada ao enviar`, error);
       showErrors(["Não foi possível enviar os dados. Tente novamente."]);
     }
   });
@@ -131,6 +177,7 @@ window.addEventListener("DOMContentLoaded", () => {
   bindSalaForm("#modalSalaForm", {
     successSelector: "#modalSuccess",
     errorSelector: "#modalErrors",
+    logPrefix: "[SalaForm Modal]",
     onSuccess: (sala) => {
       const tableBody = document.getElementById("salasTableBody");
       if (!tableBody) return;
@@ -172,6 +219,9 @@ window.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => feedback.classList.add("d-none"), 4000);
       }
       document.getElementById("modalSalaId").value = "";
+      // ensure form data-mode cleared after hide
+      const modalForm = document.querySelector('#modalSalaForm');
+      if (modalForm) delete modalForm.dataset.mode;
     },
   });
 
@@ -181,6 +231,7 @@ window.addEventListener("DOMContentLoaded", () => {
   bindSalaForm("#pageSalaForm", {
     successSelector: "#pageSuccess",
     errorSelector: "#pageErrors",
+    logPrefix: "[SalaForm Página]",
     onSuccess: (sala) => {
       // Por enquanto apenas mostra a mensagem de sucesso; não há tabela
       // para atualizar nesta view simples. Mantemos o comportamento
@@ -219,7 +270,8 @@ window.addEventListener("DOMContentLoaded", () => {
           return;
         }
       }
-      document.getElementById("modalSalaLabel").textContent = "Editar Sala";
+      const modalLabel = document.getElementById("modalSalaLabel");
+      if (modalLabel) modalLabel.textContent = "Editar Sala";
       document.getElementById("modalNome").value = row.querySelector(".sala-nome")?.textContent || "";
       document.getElementById("modalCapacidade").value = (row.querySelector(".sala-capacidade")?.textContent || "").replace(/\D/g, "") || "";
       document.getElementById("modalTipo").value = row.dataset.tipo || "";
@@ -235,6 +287,13 @@ window.addEventListener("DOMContentLoaded", () => {
       }
       document.getElementById("modalDesc").value = row._meta?.descricao || row.dataset.descricao || "";
       document.getElementById("modalSalaId").value = id;
+      // mark form as edit mode so submit handler uses PUT
+      const modalForm = document.querySelector('#modalSalaForm');
+      if (modalForm) {
+        modalForm.dataset.mode = 'edit';
+        const submitBtn = modalForm.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.textContent = 'Salvar alterações';
+      }
       const modal = new bootstrap.Modal(document.getElementById("modalSala"));
       modal.show();
       return;

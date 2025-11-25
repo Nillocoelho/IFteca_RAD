@@ -11,6 +11,13 @@ class Sala(models.Model):
     nome = models.CharField(max_length=255)
     capacidade = models.PositiveIntegerField()
     tipo = models.CharField(max_length=50, choices=TIPO_CHOICES)
+    localizacao = models.CharField(max_length=255, blank=True, null=True, verbose_name='Localização (Bloco/Andar)')
+    equipamentos = models.JSONField(default=list, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=[('Disponivel', 'Disponivel'), ('Ocupada', 'Ocupada'), ('Em Manutencao', 'Em Manutencao')],
+        default='Disponivel',
+    )
     criado_em = models.DateTimeField(auto_now_add=True)
 
     class Meta:

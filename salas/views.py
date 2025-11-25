@@ -51,9 +51,10 @@ def gerenciar_salas(request):
     ]
 
     salas = []
-    for i, sala in enumerate(salas_qs):
-        status_label, status_class = status_map[i % 3]
-        equipamentos = equipamentos_choices[i % len(equipamentos_choices)]
+    for sala in salas_qs:
+        # use persisted equipamentos/status when available; fallback to inference
+        equipamentos = getattr(sala, 'equipamentos', []) or []
+        status_label = getattr(sala, 'status', 'Disponivel')
         salas.append(
             {
                 "id": sala.id,
@@ -63,7 +64,7 @@ def gerenciar_salas(request):
                 "descricao": getattr(sala, "descricao", ""),
                 "capacidade": sala.capacidade,
                 "status": status_label,
-                "status_class": status_class,
+                "status_class": "",  # template/JS decide classes from status
                 "equipamentos": equipamentos,
             }
         )
@@ -84,8 +85,8 @@ def criar_sala(request):
     )
 
 
-@require_POST
 @csrf_exempt  # a view de API aceita chamadas via fetch; validação de campos continua
+@require_POST
 def api_criar_sala(request):
     try:
         payload = json.loads(request.body or "{}")
@@ -116,7 +117,13 @@ def api_criar_sala(request):
     if errors:
         return JsonResponse({"errors": errors}, status=400)
 
-    sala = Sala.objects.create(nome=nome, capacidade=capacidade, tipo=tipo)
+    # equipamentos may be sent as list or comma-separated string
+    equipamentos = payload.get('equipamentos') or []
+    if isinstance(equipamentos, str):
+        equipamentos = [e.strip() for e in equipamentos.split(',') if e.strip()]
+    status = payload.get('status') or 'Disponivel'
+
+    sala = Sala.objects.create(nome=nome, capacidade=capacidade, tipo=tipo, equipamentos=equipamentos, status=status)
     return JsonResponse(
         {
             "message": "Sala cadastrada com sucesso.",
@@ -125,14 +132,17 @@ def api_criar_sala(request):
                 "nome": sala.nome,
                 "capacidade": sala.capacidade,
                 "tipo": sala.tipo,
+                "localizacao": sala.localizacao,
+                "equipamentos": sala.equipamentos,
+                "status": sala.status,
                 "detalhe": reverse("gerenciar_salas"),
             },
         }
     )
 
 
-@require_http_methods(["POST", "DELETE"])
 @csrf_exempt  # permite fetch sem sessão de admin; validação e CSRF do header permanecem
+@require_http_methods(["POST", "PUT", "PATCH", "DELETE"])
 def api_update_delete_sala(request, sala_id):
     try:
         sala = Sala.objects.get(id=sala_id)
@@ -143,6 +153,9 @@ def api_update_delete_sala(request, sala_id):
         sala.delete()
         return JsonResponse({"message": "Sala removida com sucesso.", "id": sala_id})
 
+    # Allow updates via POST (legacy), PUT or PATCH
+    # For PUT/PATCH Django does not populate request.POST, but request.body is available.
+
     try:
         payload = json.loads(request.body or "{}")
     except json.JSONDecodeError:
@@ -151,6 +164,13 @@ def api_update_delete_sala(request, sala_id):
     nome = (payload.get("nome") or "").strip()
     capacidade_raw = payload.get("capacidade")
     tipo = (payload.get("tipo") or "").strip()
+
+    # optional fields
+    localizacao = (payload.get("localizacao") or "").strip() or None
+    equipamentos = payload.get("equipamentos") or []
+    if isinstance(equipamentos, str):
+        equipamentos = [e.strip() for e in equipamentos.split(',') if e.strip()]
+    status = (payload.get("status") or "").strip() or None
 
     errors = []
     if not nome:
@@ -176,6 +196,12 @@ def api_update_delete_sala(request, sala_id):
         sala.capacidade = capacidade
     if tipo:
         sala.tipo = tipo
+    if localizacao is not None:
+        sala.localizacao = localizacao
+    if equipamentos:
+        sala.equipamentos = equipamentos
+    if status:
+        sala.status = status
     sala.save()
 
     return JsonResponse(
