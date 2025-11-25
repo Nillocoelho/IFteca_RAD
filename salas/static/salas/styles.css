@@ -35,11 +35,18 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: 14px 28px;
+    height: 75px;
     position: sticky;
     top: 0;
     z-index: 20;
     border-bottom: 1px solid var(--gray-2);
     box-shadow: 0 1px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Garantia de prioridade para ajustar o topo igual ao aluno */
+.layout .topbar {
+    height: 75px !important;
+    padding: 14px 28px !important;
 }
 
 .topbar .brand {
@@ -49,8 +56,8 @@ body {
 }
 
 .topbar .brand .brand-logo {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 12px;
     background: var(--ifpb-green-soft);
     color: var(--ifpb-green-primary);
