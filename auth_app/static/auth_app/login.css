@@ -157,25 +157,6 @@ body {
   transform: translateY(1px);
 }
 
-.login-link {
-  margin-top: 24px;
-  text-align: center;
-  font-size: 14px;
-  color: #757575;
-}
-
-.login-link a {
-  color: var(--ifpb-green-primary);
-  font-weight: 600;
-  text-decoration: none;
-  transition: color 150ms ease, text-decoration 150ms ease;
-}
-
-.login-link a:hover {
-  color: var(--ifpb-green-dark);
-  text-decoration: underline;
-}
-
 .login-footer {
   margin-top: -8px;
   text-align: center;

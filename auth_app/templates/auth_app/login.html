@@ -53,11 +53,6 @@
                 <div id="loginFeedback" class="alert d-none" role="alert"></div>
 
                 <button type="submit" class="btn-primary-ifpb">Entrar</button>
-
-                <div class="login-link">
-                    Nao tem uma conta?
-                    <a href="#" id="registerLink">Cadastre-se aqui</a>
-                </div>
             </form>
         </main>
 
@@ -68,12 +63,5 @@
 
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="{% static 'auth_app/login.js' %}"></script>
-    <script>
-        // Placeholder para navegar para cadastro quando existir rota real
-        document.getElementById("registerLink")?.addEventListener("click", (event) => {
-            event.preventDefault();
-            alert("Tela de cadastro nao configurada nesta versao.");
-        });
-    </script>
 </body>
 </html>
