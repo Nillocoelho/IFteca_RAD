@@ -1,5 +1,6 @@
 import json
 import logging
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
@@ -16,6 +17,7 @@ logger = logging.getLogger(__name__)
 #  ENDPOINT ADMIN: LISTAR E CRIAR (GET/POST)
 # ============================================
 
+@login_required(login_url="/login/")
 @csrf_exempt
 def salas_admin(request):
     """
@@ -131,6 +133,7 @@ def salas_admin(request):
 #  ENDPOINT UPDATE (PUT)
 # ============================================
 
+@login_required(login_url="/login/")
 @csrf_exempt
 def atualizar_sala(request, sala_id):
     """
@@ -199,6 +202,7 @@ def atualizar_sala(request, sala_id):
 #  ENDPOINT DELETE (com validação CA2)
 # ============================================
 
+@login_required(login_url="/login/")
 @csrf_exempt
 def deletar_sala(request, sala_id):
     """
@@ -251,6 +255,7 @@ def salas_publicas(request):
     return JsonResponse(data, safe=False, status=200)
 
 
+@login_required(login_url="/login/")
 def gerenciar_salas_ui(request):
     """Renderiza a interface de gerenciamento de salas (mock admin sem login por enquanto)."""
     tipos = Sala.TIPO_CHOICES

@@ -337,17 +337,40 @@ body {
     font-weight: 700;
 }
 
-.form-control, .form-select {
+.form-control {
     border-radius: 10px;
     border: 1px solid var(--gray-2);
-    background: #fafafa;
+    background: #ffffff;
     height: 44px;
 }
 
-.form-control:focus, .form-select:focus {
+.form-select {
+    border-radius: 10px;
+    border: 1px solid #b8e0c7;
+    background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='10' viewBox='0 0 16 10'%3E%3Cpath fill='%23006837' d='M2.293 0.793a1 1 0 0 0 0 1.414l5.293 5.293a1 1 0 0 0 1.414 0l5.293-5.293a1 1 0 1 0-1.414-1.414L8 5.586 3.707 0.793a1 1 0 0 0-1.414 0Z'/%3E%3C/svg%3E"),
+        linear-gradient(180deg, #f4fbf7 0%, #e9f6ed 100%);
+    background-repeat: no-repeat, no-repeat;
+    background-position: right 14px center, 0 0;
+    background-size: 14px 10px, 100% 100%;
+    color: #2b4d39;
+    font-weight: 600;
+    height: 44px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    padding-right: 42px;
+    appearance: none;
+}
+
+.form-control:focus {
     border-color: var(--ifpb-green-primary);
     box-shadow: 0 0 0 0.15rem rgba(0, 139, 69, 0.15);
     background: #fff;
+}
+
+.form-select:focus {
+    border-color: var(--ifpb-green-dark);
+    box-shadow: 0 0 0 0.18rem rgba(0, 104, 55, 0.18);
+    background: #e4f4ea;
 }
 
 .form-label {

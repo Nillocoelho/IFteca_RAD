@@ -10,7 +10,7 @@ class Sala(models.Model):
         ("Auditorio", "Auditorio"),
     ]
 
-    nome = models.CharField(max_length=255)
+    nome = models.CharField(max_length=255, unique=True)
     capacidade = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     tipo = models.CharField(max_length=50, choices=TIPO_CHOICES)
     localizacao = models.CharField(max_length=255, blank=True, null=True, verbose_name="Localizacao (Bloco/Andar)")

@@ -24,7 +24,7 @@
             <div class="user-area">
                 <span class="small text-muted">{{ request.user.get_full_name|default:request.user.username|default:"Administrador" }}</span>
                 <span class="user-pill">Admin</span>
-                <a href="{% url 'login_page' %}" class="logout-link text-decoration-none fw-semibold">
+                <a href="{% url 'logout' %}" class="logout-link text-decoration-none fw-semibold">
                     <i data-lucide="log-out"></i>
                     <span>Sair</span>
                 </a>
@@ -155,7 +155,8 @@
                         <div class="col-md-6">
                             <label class="form-label fw-semibold" for="modalStatus">Status</label>
                             <select class="form-select" id="modalStatus" name="status" required>
-                                <option value="Disponivel" selected>Disponivel</option>
+                                <option value="" selected disabled>Selecione</option>
+                                <option value="Disponivel">Disponivel</option>
                                 <option value="Ocupada">Ocupada</option>
                                 <option value="Em Manutencao">Em Manutencao</option>
                             </select>

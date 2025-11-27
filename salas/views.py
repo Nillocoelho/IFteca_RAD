@@ -264,6 +264,9 @@ def api_criar_sala(request):
     if errors:
         return JsonResponse({"errors": errors}, status=400)
 
+    if Sala.objects.filter(nome=nome).exists():
+        return JsonResponse({"errors": ["Ja existe uma sala com esse nome."]}, status=400)
+
     equipamentos = payload.get('equipamentos') or []
     if isinstance(equipamentos, str):
         equipamentos = [e.strip() for e in equipamentos.split(',') if e.strip()]
@@ -347,6 +350,10 @@ def api_update_delete_sala(request, sala_id):
 
     if errors:
         return JsonResponse({"errors": errors}, status=400)
+
+    # Nome duplicado
+    if nome and Sala.objects.filter(nome=nome).exclude(id=sala.id).exists():
+        return JsonResponse({"errors": ["Ja existe outra sala com esse nome."]}, status=400)
 
     sala.nome = nome or sala.nome
     if capacidade is not None:

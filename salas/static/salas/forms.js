@@ -44,7 +44,7 @@ function bindSalaForm(formSelector, options = {}) {
     const capacidadeValue = formData.get("capacidade");
     const tipo = (formData.get("tipo") || "").toString().trim();
     const localizacao = (formData.get("localizacao") || formData.get("andar") || "").toString().trim();
-    const status = (formData.get("status") || "Disponivel").toString().trim();
+    const status = (formData.get("status") || "").toString().trim();
     const equipamentosRaw = (formData.get("equipamentos") || "").toString().trim();
     const descricao = (formData.get("descricao") || formData.get("descrição") || "").toString().trim();
 
@@ -53,14 +53,15 @@ function bindSalaForm(formSelector, options = {}) {
 
     const capacidade = parseInt(capacidadeValue, 10);
     if (Number.isNaN(capacidade) || capacidade <= 0) {
-      clientErrors.push("Informe uma capacidade numérica maior que zero.");
+      clientErrors.push("Informe uma capacidade numerica maior que zero.");
     }
 
     if (!tipo) clientErrors.push("Selecione o tipo da sala.");
-    console.debug(`${logPrefix}: submissão iniciada`, { nome, capacidade, tipo, localizacao, status });
+    if (!status) clientErrors.push("Selecione o status da sala.");
+    console.debug(`${logPrefix}: submissao iniciada`, { nome, capacidade, tipo, localizacao, status });
 
     if (clientErrors.length) {
-      console.warn(`${logPrefix}: bloqueado por validação do cliente`, clientErrors);
+      console.warn(`${logPrefix}: bloqueado por validacao do cliente`, clientErrors);
       showErrors(clientErrors);
       return;
     }
@@ -76,11 +77,11 @@ function bindSalaForm(formSelector, options = {}) {
     try {
       // Determine mode: prefer explicit data-mode on form (set when opening modal),
       // fallback to hidden input `#modalSalaId` value if present.
-      const formMode = form.dataset.mode || (form.querySelector('#modalSalaId')?.value ? 'edit' : 'create');
-      const id = form.querySelector('#modalSalaId')?.value;
+      const formMode = form.dataset.mode || (form.querySelector("#modalSalaId")?.value ? "edit" : "create");
+      const id = form.querySelector("#modalSalaId")?.value;
       let url = "/api/salas/";
       let method = "POST";
-      if (formMode === 'edit' && id) {
+      if (formMode === "edit" && id) {
         url = `/api/salas/${id}/`;
         method = "PUT";
       }
@@ -97,7 +98,7 @@ function bindSalaForm(formSelector, options = {}) {
 
       let data = null;
       try {
-        // nem sempre o servidor retorna JSON (ex: 405 vazia); proteger parsing
+        // Nem sempre o servidor retorna JSON (ex: 405 vazia); proteger parsing
         data = await response.json();
       } catch (err) {
         console.debug(`${logPrefix}: resposta sem JSON`, err);
@@ -105,30 +106,29 @@ function bindSalaForm(formSelector, options = {}) {
       }
 
       if (!response.ok) {
-        console.warn(`${logPrefix}: erro da API ao cadastrar sala`, { status: response.status, data });
+        console.warn(`${logPrefix}: erro da API ao salvar sala`, { status: response.status, data });
         const errors = data && data.errors ? data.errors : [data && data.message ? data.message : "Erro ao salvar a sala."];
         showErrors(errors);
         return;
       }
 
+      // Reseta UI do form, mas usa dados retornados para atualizar a tabela
       form.reset();
-      // reset edit mode marker
       delete form.dataset.mode;
-      // reset submit button text if it was altered
       const submitBtn = form.querySelector('button[type="submit"]');
-      if (submitBtn) submitBtn.textContent = options.createButtonText || 'Adicionar Sala';
+      if (submitBtn) submitBtn.textContent = options.createButtonText || "Adicionar Sala";
 
-      // message differs between create and edit
-      const defaultMessage = method === 'PUT' ? 'Sala atualizada com sucesso.' : 'Sala cadastrada com sucesso.';
+      const defaultMessage = method === "PUT" ? "Sala atualizada com sucesso." : "Sala cadastrada com sucesso.";
       showSuccess(data.message || defaultMessage);
-      console.info(`${logPrefix}: sala cadastrada com sucesso`, data.sala);
+      console.info(`${logPrefix}: sala salva com sucesso`, data.sala);
 
       if (typeof options.onSuccess === "function") {
-        options.onSuccess(data.sala);
+        const serverSala = data?.sala || {};
+        options.onSuccess(serverSala, payloadBody);
       }
     } catch (error) {
       console.error(`${logPrefix}: falha inesperada ao enviar`, error);
-      showErrors(["Não foi possível enviar os dados. Tente novamente."]);
+      showErrors(["Nao foi possivel enviar os dados. Tente novamente."]);
     }
   });
 }
@@ -140,7 +140,6 @@ window.addEventListener("DOMContentLoaded", () => {
     const equipments = sala.equipamentos || [];
     const visibleEquip = equipments.slice(0, 2).map((e) => `<span class="equip-tag">${e}</span>`).join(" ");
     const extra = equipments.length > 2 ? `<span class="text-muted">+${equipments.length - 2}</span>` : "";
-    // mapear status para as mesmas classes usadas pelo template server-side
     const statusText = sala.status || "Disponivel";
     const statusPillClass =
       statusText === "Disponivel"
@@ -163,13 +162,11 @@ window.addEventListener("DOMContentLoaded", () => {
       </td>
     `;
 
-    // meta usado pelo editor dinâmico
     tr._meta = { equipamentos: equipments, descricao: sala.descricao || "" };
-    // dataset para consistência com linhas renderizadas no servidor
     tr.dataset.nome = sala.nome || "";
     tr.dataset.andar = sala.andar || "";
     tr.dataset.tipo = sala.tipo || "";
-    tr.dataset.equipamentos = (equipments || []).join(",");
+    tr.dataset.equipamentos = equipments.join(",");
     tr.dataset.descricao = sala.descricao || "";
     return tr;
   }
@@ -178,7 +175,7 @@ window.addEventListener("DOMContentLoaded", () => {
     successSelector: "#modalSuccess",
     errorSelector: "#modalErrors",
     logPrefix: "[SalaForm Modal]",
-    onSuccess: (sala) => {
+    onSuccess: (sala, submitted) => {
       const tableBody = document.getElementById("salasTableBody");
       if (!tableBody) return;
       const salaObj = {
@@ -186,13 +183,10 @@ window.addEventListener("DOMContentLoaded", () => {
         nome: sala.nome,
         capacidade: sala.capacidade,
         tipo: sala.tipo,
-        andar: document.getElementById("modalAndar")?.value || "",
-        status: document.getElementById("modalStatus")?.value || "Disponivel",
-        equipamentos: (document.getElementById("modalEquip")?.value || "")
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        descricao: document.getElementById("modalDesc")?.value || "",
+        andar: sala.andar || sala.localizacao || submitted?.localizacao || "",
+        status: sala.status || submitted?.status || "Disponivel",
+        equipamentos: sala.equipamentos || submitted?.equipamentos || [],
+        descricao: sala.descricao || submitted?.descricao || "",
       };
 
       const editId = document.getElementById("modalSalaId")?.value;
@@ -219,23 +213,18 @@ window.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => feedback.classList.add("d-none"), 4000);
       }
       document.getElementById("modalSalaId").value = "";
-      // ensure form data-mode cleared after hide
-      const modalForm = document.querySelector('#modalSalaForm');
+      const modalForm = document.querySelector("#modalSalaForm");
       if (modalForm) delete modalForm.dataset.mode;
     },
   });
 
-  // Também vinculamos o formulário da página padrão (criar sala)
-  // Isso permite que o formulário em `salas/templates/salas/criar_sala.html`
-  // envie via fetch para a `api_criar_sala` e mostre feedback em tela.
+  // Formulario de pagina simples (criar_sala)
   bindSalaForm("#pageSalaForm", {
     successSelector: "#pageSuccess",
     errorSelector: "#pageErrors",
-    logPrefix: "[SalaForm Página]",
-    onSuccess: (sala) => {
-      // Por enquanto apenas mostra a mensagem de sucesso; não há tabela
-      // para atualizar nesta view simples. Mantemos o comportamento
-      // de reset do form e possibilidade de callback futuro.
+    logPrefix: "[SalaForm Pagina]",
+    onSuccess: () => {
+      // Apenas feedback; nao ha tabela para atualizar aqui.
     },
   });
 
@@ -247,7 +236,6 @@ window.addEventListener("DOMContentLoaded", () => {
       if (!row) return;
       let id = editBtn.dataset.id || row.dataset.id;
       if (!id) {
-        // tenta resolver id via lookup pelo nome (caso linhas antigas não tenham data-id)
         const nome = row.dataset.nome || row.querySelector(".sala-nome")?.textContent || "";
         if (nome) {
           try {
@@ -255,11 +243,9 @@ window.addEventListener("DOMContentLoaded", () => {
             if (resp.ok) {
               const json = await resp.json();
               id = json.id;
-              // definir dataset para evitar nova lookup
               row.dataset.id = id;
             } else {
-              // não encontrou ou ambíguo
-              alert("Não foi possivel identificar o registro para edicão.");
+              alert("Nao foi possivel identificar o registro para edicao.");
               return;
             }
           } catch (err) {
@@ -273,7 +259,8 @@ window.addEventListener("DOMContentLoaded", () => {
       const modalLabel = document.getElementById("modalSalaLabel");
       if (modalLabel) modalLabel.textContent = "Editar Sala";
       document.getElementById("modalNome").value = row.querySelector(".sala-nome")?.textContent || "";
-      document.getElementById("modalCapacidade").value = (row.querySelector(".sala-capacidade")?.textContent || "").replace(/\D/g, "") || "";
+      document.getElementById("modalCapacidade").value =
+        (row.querySelector(".sala-capacidade")?.textContent || "").replace(/\D/g, "") || "";
       document.getElementById("modalTipo").value = row.dataset.tipo || "";
       document.getElementById("modalAndar").value = row.querySelector(".sala-andar")?.textContent || "";
       const statusText = row.querySelector(".sala-status")?.textContent.trim() || "Disponivel";
@@ -283,16 +270,17 @@ window.addEventListener("DOMContentLoaded", () => {
         document.getElementById("modalEquip").value = equipamentosFromMeta.join(", ");
       } else {
         const ds = row.dataset.equipamentos || "";
-        document.getElementById("modalEquip").value = ds ? ds.split(",").map((s) => s.trim()).filter(Boolean).join(", ") : "";
+        document.getElementById("modalEquip").value = ds
+          ? ds.split(",").map((s) => s.trim()).filter(Boolean).join(", ")
+          : "";
       }
       document.getElementById("modalDesc").value = row._meta?.descricao || row.dataset.descricao || "";
       document.getElementById("modalSalaId").value = id;
-      // mark form as edit mode so submit handler uses PUT
-      const modalForm = document.querySelector('#modalSalaForm');
+      const modalForm = document.querySelector("#modalSalaForm");
       if (modalForm) {
-        modalForm.dataset.mode = 'edit';
+        modalForm.dataset.mode = "edit";
         const submitBtn = modalForm.querySelector('button[type="submit"]');
-        if (submitBtn) submitBtn.textContent = 'Salvar alterações';
+        if (submitBtn) submitBtn.textContent = "Salvar alteracoes";
       }
       const modal = new bootstrap.Modal(document.getElementById("modalSala"));
       modal.show();
@@ -313,7 +301,7 @@ window.addEventListener("DOMContentLoaded", () => {
               id = json.id;
               row.dataset.id = id;
             } else {
-              alert("Não foi possivel identificar o registro para exclusão.");
+              alert("Nao foi possivel identificar o registro para exclusao.");
               return;
             }
           } catch (err) {
@@ -372,7 +360,6 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Se a URL contiver ?openModal=1, abre o modal de criação/edição
   const params = new URLSearchParams(window.location.search);
   if (params.get("openModal") === "1") {
     const modalEl = document.getElementById("modalSala");
@@ -382,7 +369,6 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Sempre que o modal fecha, limpamos campos/feedback e voltamos para modo "Adicionar"
   const modalEl = document.getElementById("modalSala");
   if (modalEl) {
     modalEl.addEventListener("hidden.bs.modal", () => {
