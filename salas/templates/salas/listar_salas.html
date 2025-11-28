@@ -63,7 +63,7 @@
                         <article
                             class="room-card h-100"
                             data-status="{{ sala.status }}"
-                            data-search="{{ sala.nome }} {{ sala.andar }} {{ sala.capacidade }} {% for equip in sala.equipamentos %}{{ equip }} {% endfor %}"
+                            data-search="{{ sala.nome }} {{ sala.tipo }} {{ sala.capacidade }} {% for equip in sala.equipamentos %}{{ equip }} {% endfor %}"
                         >
                             <header class="room-card__header">
                                 <div class="room-icon">
@@ -71,7 +71,7 @@
                                 </div>
                                 <div class="room-title">
                                     <div class="room-name">{{ sala.nome }}</div>
-                                    <div class="room-location">{{ sala.andar }}</div>
+                                    <div class="room-location">Tipo: {{ sala.tipo }}</div>
                                 </div>
                                 <span class="status-pill status-{{ sala.status|slugify }}">
                                     {{ sala.status }}
@@ -98,8 +98,6 @@
                             <footer class="room-card__footer">
                                 {% if sala.status == "Disponivel" %}
                                     <a class="cta" href="{% url 'detalhar_sala' sala.id %}">Ver Disponibilidade</a>
-                                {% elif sala.status == "Ocupada" %}
-                                    <span class="cta disabled">Sala Ocupada</span>
                                 {% else %}
                                     <span class="cta disabled maintenance">Em Manutencao</span>
                                 {% endif %}

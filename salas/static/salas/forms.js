@@ -43,10 +43,9 @@ function bindSalaForm(formSelector, options = {}) {
     const nome = (formData.get("nome") || "").toString().trim();
     const capacidadeValue = formData.get("capacidade");
     const tipo = (formData.get("tipo") || "").toString().trim();
-    const localizacao = (formData.get("localizacao") || formData.get("andar") || "").toString().trim();
     const status = (formData.get("status") || "").toString().trim();
     const equipamentosRaw = (formData.get("equipamentos") || "").toString().trim();
-    const descricao = (formData.get("descricao") || formData.get("descrição") || "").toString().trim();
+    const descricao = (formData.get("descricao") || "").toString().trim();
 
     const clientErrors = [];
     if (!nome) clientErrors.push("Preencha o nome da sala.");
@@ -58,7 +57,7 @@ function bindSalaForm(formSelector, options = {}) {
 
     if (!tipo) clientErrors.push("Selecione o tipo da sala.");
     if (!status) clientErrors.push("Selecione o status da sala.");
-    console.debug(`${logPrefix}: submissao iniciada`, { nome, capacidade, tipo, localizacao, status });
+    console.debug(`${logPrefix}: submissao iniciada`, { nome, capacidade, tipo, status });
 
     if (clientErrors.length) {
       console.warn(`${logPrefix}: bloqueado por validacao do cliente`, clientErrors);
@@ -67,7 +66,6 @@ function bindSalaForm(formSelector, options = {}) {
     }
 
     const payloadBody = { nome, capacidade, tipo };
-    if (localizacao) payloadBody.localizacao = localizacao;
     if (equipamentosRaw) {
       payloadBody.equipamentos = equipamentosRaw.split(",").map((s) => s.trim()).filter(Boolean);
     }
@@ -142,15 +140,11 @@ window.addEventListener("DOMContentLoaded", () => {
     const extra = equipments.length > 2 ? `<span class="text-muted">+${equipments.length - 2}</span>` : "";
     const statusText = sala.status || "Disponivel";
     const statusPillClass =
-      statusText === "Disponivel"
-        ? "status-pill status-available"
-        : statusText === "Ocupada"
-        ? "status-pill status-occupied"
-        : "status-pill status-maintenance";
+      statusText === "Disponivel" ? "status-pill status-available" : "status-pill status-maintenance";
 
     tr.innerHTML = `
       <td class="fw-semibold sala-nome">${sala.nome}</td>
-      <td class="sala-andar">${sala.andar || ""}</td>
+      <td class="sala-tipo">${sala.tipo || ""}</td>
       <td class="sala-capacidade">${sala.capacidade} pessoas</td>
       <td class="sala-status"><span class="${statusPillClass}">${statusText}</span></td>
       <td class="sala-equip">
@@ -164,7 +158,6 @@ window.addEventListener("DOMContentLoaded", () => {
 
     tr._meta = { equipamentos: equipments, descricao: sala.descricao || "" };
     tr.dataset.nome = sala.nome || "";
-    tr.dataset.andar = sala.andar || "";
     tr.dataset.tipo = sala.tipo || "";
     tr.dataset.equipamentos = equipments.join(",");
     tr.dataset.descricao = sala.descricao || "";
@@ -182,8 +175,7 @@ window.addEventListener("DOMContentLoaded", () => {
         id: sala.id,
         nome: sala.nome,
         capacidade: sala.capacidade,
-        tipo: sala.tipo,
-        andar: sala.andar || sala.localizacao || submitted?.localizacao || "",
+        tipo: sala.tipo || submitted?.tipo || "",
         status: sala.status || submitted?.status || "Disponivel",
         equipamentos: sala.equipamentos || submitted?.equipamentos || [],
         descricao: sala.descricao || submitted?.descricao || "",
@@ -262,7 +254,6 @@ window.addEventListener("DOMContentLoaded", () => {
       document.getElementById("modalCapacidade").value =
         (row.querySelector(".sala-capacidade")?.textContent || "").replace(/\D/g, "") || "";
       document.getElementById("modalTipo").value = row.dataset.tipo || "";
-      document.getElementById("modalAndar").value = row.querySelector(".sala-andar")?.textContent || "";
       const statusText = row.querySelector(".sala-status")?.textContent.trim() || "Disponivel";
       document.getElementById("modalStatus").value = statusText;
       const equipamentosFromMeta = row._meta?.equipamentos;
@@ -340,8 +331,8 @@ window.addEventListener("DOMContentLoaded", () => {
       document.querySelectorAll("#salasTableBody tr").forEach((tr) => {
         if (tr.classList.contains("js-empty-row")) return;
         const name = tr.querySelector(".sala-nome")?.textContent.toLowerCase() || "";
-        const floor = tr.querySelector(".sala-andar")?.textContent.toLowerCase() || "";
-        const visible = name.includes(q) || floor.includes(q);
+        const tipo = tr.querySelector(".sala-tipo")?.textContent.toLowerCase() || "";
+        const visible = name.includes(q) || tipo.includes(q);
         tr.style.display = visible ? "" : "none";
       });
       const anyVisible = Array.from(document.querySelectorAll("#salasTableBody tr")).some((t) => t.style.display !== "none");

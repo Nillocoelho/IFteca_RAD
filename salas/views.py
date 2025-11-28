@@ -18,15 +18,6 @@ def admin_required(view_func):
     return login_required(user_passes_test(_is_admin, login_url="/login/")(view_func))
 
 
-def _infer_andar(nome: str) -> str:
-    nome = (nome or "").lower()
-    if any(code in nome for code in ["101", "102", "103"]):
-        return "1o Andar - Bloco A"
-    if any(code in nome for code in ["201", "202", "203"]):
-        return "2o Andar - Bloco B"
-    return "1o Andar - Bloco A"
-
-
 @require_GET
 def listar_salas(request):
     # Lista de salas visivel para alunos. Usa dados reais, mas apresenta estado estatico de usuario.
@@ -39,7 +30,7 @@ def listar_salas(request):
             {
                 "id": sala.id,
                 "nome": sala.nome,
-                "andar": sala.localizacao or _infer_andar(sala.nome),
+                "tipo": sala.tipo,
                 "capacidade": sala.capacidade,
                 "status": status_label,
                 "status_class": "",
@@ -73,7 +64,7 @@ def detalhar_sala(request, sala_id: int):
         sala = {
             "id": sala_obj.id,
             "nome": sala_obj.nome,
-            "andar": sala_obj.localizacao or _infer_andar(sala_obj.nome),
+            "tipo": sala_obj.tipo,
             "status": getattr(sala_obj, "status", "Disponivel") or "Disponivel",
             "capacidade": sala_obj.capacidade,
             "descricao": getattr(sala_obj, "descricao", "") or "Sala de estudo.",
@@ -110,7 +101,7 @@ def _fallback_salas():
         {
             "id": 101,
             "nome": "Sala 101",
-            "andar": "1o Andar - Bloco A",
+            "tipo": "Individual",
             "capacidade": 20,
             "status": "Disponivel",
             "status_class": "",
@@ -120,7 +111,7 @@ def _fallback_salas():
         {
             "id": 102,
             "nome": "Sala 102",
-            "andar": "1o Andar - Bloco A",
+            "tipo": "Coletiva",
             "capacidade": 15,
             "status": "Disponivel",
             "status_class": "",
@@ -130,9 +121,9 @@ def _fallback_salas():
         {
             "id": 103,
             "nome": "Sala 103",
-            "andar": "1o Andar - Bloco A",
+            "tipo": "Individual",
             "capacidade": 25,
-            "status": "Ocupada",
+            "status": "Em Manutencao",
             "status_class": "",
             "equipamentos": ["Projetor", "Quadro branco", "Ar condicionado", "TV"],
             "descricao": "Sala com TV e projetor para apresentacoes.",
@@ -140,7 +131,7 @@ def _fallback_salas():
         {
             "id": 201,
             "nome": "Sala 201",
-            "andar": "2o Andar - Bloco B",
+            "tipo": "Coletiva",
             "capacidade": 30,
             "status": "Disponivel",
             "status_class": "",
@@ -150,7 +141,7 @@ def _fallback_salas():
         {
             "id": 202,
             "nome": "Sala 202",
-            "andar": "2o Andar - Bloco B",
+            "tipo": "Auditorio",
             "capacidade": 12,
             "status": "Em Manutencao",
             "status_class": "",
@@ -160,7 +151,7 @@ def _fallback_salas():
         {
             "id": 203,
             "nome": "Sala 203",
-            "andar": "2o Andar - Bloco B",
+            "tipo": "Auditorio",
             "capacidade": 18,
             "status": "Disponivel",
             "status_class": "",
@@ -195,7 +186,7 @@ def api_lookup_sala(request):
 @admin_required
 @require_GET
 def gerenciar_salas(request):
-    # Lista salas reais e complementa com dados de exibicao (andar/status/equipamentos) para a UI.
+    # Lista salas reais e complementa com dados de exibicao (status/equipamentos) para a UI.
     salas_qs = Sala.objects.all()
 
     salas = []
@@ -207,7 +198,6 @@ def gerenciar_salas(request):
             {
                 "id": sala.id,
                 "nome": sala.nome,
-                "andar": sala.localizacao or _infer_andar(sala.nome),
                 "tipo": getattr(sala, "tipo", ""),
                 "descricao": descricao,
                 "capacidade": sala.capacidade,
@@ -271,7 +261,7 @@ def api_criar_sala(request):
     if isinstance(equipamentos, str):
         equipamentos = [e.strip() for e in equipamentos.split(',') if e.strip()]
     status = payload.get('status') or 'Disponivel'
-    localizacao = (payload.get('localizacao') or payload.get('andar') or '').strip()
+    localizacao = (payload.get('localizacao') or '').strip()
     descricao = (payload.get('descricao') or '').strip()
 
     sala = Sala(
@@ -325,7 +315,7 @@ def api_update_delete_sala(request, sala_id):
     capacidade_raw = payload.get("capacidade")
     tipo = (payload.get("tipo") or "").strip()
 
-    localizacao = (payload.get("localizacao") or payload.get("andar") or "").strip() or None
+    localizacao = (payload.get("localizacao") or "").strip() or None
     equipamentos = payload.get("equipamentos") or []
     if isinstance(equipamentos, str):
         equipamentos = [e.strip() for e in equipamentos.split(',') if e.strip()]

@@ -28,8 +28,7 @@ class SalaTests(TestCase):
         payload = {
             "nome": "Sala Nova",
             "capacidade": 20,
-            "tipo": "Sala de Aula",
-            "localizacao": "1o Andar",
+            "tipo": "Individual",
             "equipamentos": ["Projetor", "Quadro"],
             "status": "Disponivel",
             "descricao": "Sala para testes",
@@ -49,7 +48,7 @@ class SalaTests(TestCase):
     def test_cadastro_sala_campos_obrigatorios(self):
         self.login_admin()
         initial_count = Sala.objects.count()
-        payload = {"nome": "", "capacidade": "", "tipo": "Sala de Aula"}
+        payload = {"nome": "", "capacidade": "", "tipo": "Individual"}
 
         resp = self.client.post(
             reverse("api_criar_sala"),
@@ -64,11 +63,11 @@ class SalaTests(TestCase):
 
     # CT1.3 – Tentativa de Cadastro com Nome Duplicado
     def test_cadastro_sala_nome_duplicado(self):
-        Sala.objects.create(nome="Sala X", capacidade=10, tipo="Sala de Aula")
+        Sala.objects.create(nome="Sala X", capacidade=10, tipo="Individual")
         self.login_admin()
         initial_count = Sala.objects.count()
 
-        payload = {"nome": "Sala X", "capacidade": 12, "tipo": "Sala de Aula"}
+        payload = {"nome": "Sala X", "capacidade": 12, "tipo": "Individual"}
         resp = self.client.post(
             reverse("api_criar_sala"),
             data=json.dumps(payload),
@@ -81,8 +80,8 @@ class SalaTests(TestCase):
 
     # CT2.1 – Visualização da lista no painel Admin
     def test_lista_admin_renderiza_salas(self):
-        Sala.objects.create(nome="Sala Admin A", capacidade=15, tipo="Sala de Aula")
-        Sala.objects.create(nome="Sala Admin B", capacidade=18, tipo="Laboratorio")
+        Sala.objects.create(nome="Sala Admin A", capacidade=15, tipo="Individual")
+        Sala.objects.create(nome="Sala Admin B", capacidade=18, tipo="Coletiva")
         self.login_admin()
 
         resp = self.client.get(reverse("gerenciar_salas"))
@@ -92,7 +91,7 @@ class SalaTests(TestCase):
 
     # CT2.2 – Ações de Gerenciamento Visíveis (Admin)
     def test_lista_admin_mostra_acoes_editar_e_excluir(self):
-        Sala.objects.create(nome="Sala Admin C", capacidade=12, tipo="Sala de Aula")
+        Sala.objects.create(nome="Sala Admin C", capacidade=12, tipo="Individual")
         self.login_admin()
 
         resp = self.client.get(reverse("gerenciar_salas"))
@@ -102,7 +101,7 @@ class SalaTests(TestCase):
 
     # CT3.1 – Visualização da Lista Pública
     def test_lista_publica_disponivel_para_anonimo(self):
-        Sala.objects.create(nome="Sala Publica", capacidade=30, tipo="Sala de Aula")
+        Sala.objects.create(nome="Sala Publica", capacidade=30, tipo="Auditorio")
 
         resp = self.client.get(reverse("listar_salas"))
         self.assertEqual(resp.status_code, 200)
@@ -110,7 +109,7 @@ class SalaTests(TestCase):
 
     # CT3.2 – Informações Visíveis na Lista
     def test_lista_publica_mostra_campos_principais(self):
-        sala = Sala.objects.create(nome="Sala Info", capacidade=22, tipo="Sala de Aula")
+        sala = Sala.objects.create(nome="Sala Info", capacidade=22, tipo="Individual")
 
         resp = self.client.get(reverse("listar_salas"))
         self.assertEqual(resp.status_code, 200)
@@ -119,7 +118,7 @@ class SalaTests(TestCase):
 
     # CT3.3 – Interação para Ver Disponibilidade
     def test_link_ver_disponibilidade_funciona(self):
-        sala = Sala.objects.create(nome="Sala Link", capacidade=18, tipo="Sala de Aula", status="Disponivel")
+        sala = Sala.objects.create(nome="Sala Link", capacidade=18, tipo="Coletiva", status="Disponivel")
         lista_resp = self.client.get(reverse("listar_salas"))
         self.assertEqual(lista_resp.status_code, 200)
         detalhe_url = reverse("detalhar_sala", args=[sala.id])
@@ -131,12 +130,12 @@ class SalaTests(TestCase):
 
     # CT4.1 – Edição com Sucesso
     def test_edicao_sala_com_sucesso(self):
-        sala = Sala.objects.create(nome="Sala Edit", capacidade=10, tipo="Sala de Aula")
+        sala = Sala.objects.create(nome="Sala Edit", capacidade=10, tipo="Individual")
         self.login_admin()
         payload = {
             "nome": "Sala Editada",
             "capacidade": 25,
-            "tipo": "Laboratorio",
+            "tipo": "Auditorio",
             "status": "Disponivel",
         }
 
@@ -150,11 +149,11 @@ class SalaTests(TestCase):
         sala.refresh_from_db()
         self.assertEqual(sala.nome, "Sala Editada")
         self.assertEqual(sala.capacidade, 25)
-        self.assertEqual(sala.tipo, "Laboratorio")
+        self.assertEqual(sala.tipo, "Auditorio")
 
     # CT5.1 – Deleção de Sala com Sucesso
     def test_delecao_sala_com_sucesso(self):
-        sala = Sala.objects.create(nome="Sala Delete", capacidade=8, tipo="Sala de Aula")
+        sala = Sala.objects.create(nome="Sala Delete", capacidade=8, tipo="Individual")
         self.login_admin()
 
         resp = self.client.delete(reverse("api_update_delete_sala", args=[sala.id]))

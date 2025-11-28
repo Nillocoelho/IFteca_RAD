@@ -4,21 +4,17 @@ from django.db import models
 
 
 class Sala(models.Model):
-    TIPO_CHOICES = [
-        ("Sala de Aula", "Sala de Aula"),
-        ("Laboratorio", "Laboratorio"),
-        ("Auditorio", "Auditorio"),
-    ]
+    TIPO_CHOICES = [("Individual", "Individual"), ("Coletiva", "Coletiva"), ("Auditorio", "Auditorio")]
 
     nome = models.CharField(max_length=255, unique=True)
     capacidade = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     tipo = models.CharField(max_length=50, choices=TIPO_CHOICES)
-    localizacao = models.CharField(max_length=255, blank=True, null=True, verbose_name="Localizacao (Bloco/Andar)")
+    localizacao = models.CharField(max_length=255, blank=True, null=True, verbose_name="Localizacao")
     equipamentos = models.JSONField(default=list, blank=True)
     descricao = models.TextField(blank=True, null=True)
     status = models.CharField(
         max_length=20,
-        choices=[("Disponivel", "Disponivel"), ("Ocupada", "Ocupada"), ("Em Manutencao", "Em Manutencao")],
+        choices=[("Disponivel", "Disponivel"), ("Em Manutencao", "Em Manutencao")],
         default="Disponivel",
     )
     criado_em = models.DateTimeField(auto_now_add=True)

@@ -24,15 +24,11 @@ function renderSalaRow(s){
   const extra = equipamentos.length > 2 ? `<span class="text-muted">+${equipamentos.length - 2}</span>` : '';
   const statusText = s.status || s.status_text || "Disponivel";
   const statusPillClass =
-    statusText === "Disponivel"
-      ? "status-pill status-available"
-      : statusText === "Ocupada"
-      ? "status-pill status-occupied"
-      : "status-pill status-maintenance";
+    statusText === "Disponivel" ? "status-pill status-available" : "status-pill status-maintenance";
 
   tr.innerHTML = `
     <td class="fw-semibold sala-nome">${s.nome}</td>
-    <td class="sala-andar">${s.localizacao || s.andar || ""}</td>
+    <td class="sala-tipo">${s.tipo || ""}</td>
     <td class="sala-capacidade">${s.capacidade} pessoas</td>
     <td class="sala-status"><span class="${statusPillClass}">${statusText}</span></td>
     <td class="sala-equip"><div class="equipments">${visibleEquip} ${extra}</div></td>
@@ -43,7 +39,6 @@ function renderSalaRow(s){
   `;
   tr._meta = { equipamentos: equipamentos, descricao: s.descricao || "" };
   tr.dataset.nome = s.nome || "";
-  tr.dataset.andar = s.localizacao || s.andar || "";
   tr.dataset.tipo = s.tipo || "";
   tr.dataset.equipamentos = (equipamentos || []).join(',');
   tr.dataset.descricao = s.descricao || "";
@@ -64,13 +59,13 @@ function hideErrors(){const box=document.getElementById('modalErrors');if(box)bo
 
 document.addEventListener('DOMContentLoaded',()=>{
   loadAndRender();
-  const search=document.getElementById('searchInput');if(search){search.addEventListener('input',e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('#salasTableBody tr').forEach(tr=>{if(tr.classList.contains('js-empty-row')) return;const name=tr.querySelector('.sala-nome')?.textContent.toLowerCase()||'';const floor=tr.querySelector('.sala-andar')?.textContent.toLowerCase()||'';tr.style.display=(name.includes(q)||floor.includes(q))? '':'none';});});}
+  const search=document.getElementById('searchInput');if(search){search.addEventListener('input',e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('#salasTableBody tr').forEach(tr=>{if(tr.classList.contains('js-empty-row')) return;const name=tr.querySelector('.sala-nome')?.textContent.toLowerCase()||'';const tipo=tr.querySelector('.sala-tipo')?.textContent.toLowerCase()||'';tr.style.display=(name.includes(q)||tipo.includes(q))? '':'none';});});}
 
   const modalSubmit=document.getElementById('modalSubmit');
   modalSubmit?.addEventListener('click',async()=>{
     hideErrors();
     const id=document.getElementById('modalSalaId').value;
-    const payload={nome:document.getElementById('modalNome').value,capacidade:document.getElementById('modalCapacidade').value,tipo:document.getElementById('modalTipo').value,localizacao:document.getElementById('modalAndar').value};
+    const payload={nome:document.getElementById('modalNome').value,capacidade:document.getElementById('modalCapacidade').value,tipo:document.getElementById('modalTipo').value};
     const csrf=getCsrfToken();
     console.info("[salas-ui] submit sala", {id, payload});
     try{
@@ -88,7 +83,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('salasTableBody')?.addEventListener('click',async(e)=>{
     const edit=e.target.closest('.btn-edit');
     const del=e.target.closest('.btn-delete');
-    if(edit){const id=edit.dataset.id;console.info("[salas-ui] editar sala acionado", {id});const tr=document.querySelector(`tr[data-id="${id}"]`);document.getElementById('modalTitle').textContent='Editar Sala';document.getElementById('modalNome').value=tr.querySelector('.sala-nome').textContent;document.getElementById('modalCapacidade').value=tr.querySelector('.sala-capacidade').textContent.replace(/\D/g,'');document.getElementById('modalAndar').value=tr.querySelector('.sala-andar').textContent;document.getElementById('modalSalaId').value=id;new bootstrap.Modal(document.getElementById('modalSala')).show();return}
+    if(edit){const id=edit.dataset.id;console.info("[salas-ui] editar sala acionado", {id});const tr=document.querySelector(`tr[data-id="${id}"]`);document.getElementById('modalTitle').textContent='Editar Sala';document.getElementById('modalNome').value=tr.querySelector('.sala-nome').textContent;document.getElementById('modalCapacidade').value=tr.querySelector('.sala-capacidade').textContent.replace(/\D/g,'');document.getElementById('modalTipo').value=tr.dataset.tipo||'';const equipField=document.getElementById('modalEquip');if(equipField){const eq=tr._meta?.equipamentos||((tr.dataset.equipamentos||'').split(',').filter(Boolean));equipField.value=eq.join(', ');}const descField=document.getElementById('modalDesc');if(descField){descField.value=tr._meta?.descricao||tr.dataset.descricao||'';}document.getElementById('modalSalaId').value=id;new bootstrap.Modal(document.getElementById('modalSala')).show();return}
     if(del){if(!confirm('Tem certeza que deseja excluir esta sala?')) return;const id=del.dataset.id;console.info("[salas-ui] solicitando exclusão da sala", {id});const csrf=getCsrfToken();const res=await fetch(deleteUrl(id),{method:'DELETE',headers:{'X-CSRFToken':csrf}});console.info("[salas-ui] resposta exclusão", {status:res.status});if(!res.ok){alert('Erro ao excluir');return}loadAndRender();}
   });
 });

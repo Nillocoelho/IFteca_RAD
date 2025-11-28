@@ -70,25 +70,23 @@
                                 <thead>
                                     <tr>
                                         <th>Nome</th>
-                                        <th>Andar</th>
+                                        <th>Tipo</th>
                                         <th>Capacidade</th>
                                         <th>Status</th>
                                         <th>Equipamentos</th>
-                                        <th class="text-end">Ações</th>
+                                        <th class="text-end">Acoes</th>
                                     </tr>
                                 </thead>
                                 <tbody id="salasTableBody">
                                     {% if salas %}
                                         {% for sala in salas %}
-                                        <tr data-id="{{ sala.id }}" data-nome="{{ sala.nome }}" data-andar="{{ sala.andar|default_if_none:'' }}" data-tipo="{{ sala.tipo }}" data-equipamentos="{{ sala.equipamentos|join:"," }}" data-descricao="{{ sala.descricao|default_if_none:'' }}">
+                                        <tr data-id="{{ sala.id }}" data-nome="{{ sala.nome }}" data-tipo="{{ sala.tipo }}" data-equipamentos="{{ sala.equipamentos|join:"," }}" data-descricao="{{ sala.descricao|default_if_none:'' }}">
                                             <td class="fw-semibold sala-nome">{{ sala.nome }}</td>
-                                            <td class="sala-andar">{{ sala.andar }}</td>
+                                            <td class="sala-tipo">{{ sala.tipo }}</td>
                                             <td class="sala-capacidade">{{ sala.capacidade }} pessoas</td>
                                             <td>
                                                 {% if sala.status == "Disponivel" %}
                                                     <span class="status-pill status-available">Disponivel</span>
-                                                {% elif sala.status == "Ocupada" %}
-                                                    <span class="status-pill status-occupied">Ocupada</span>
                                                 {% elif sala.status == "Em Manutencao" %}
                                                     <span class="status-pill status-maintenance">Em Manutencao</span>
                                                 {% else %}
@@ -145,10 +143,6 @@
                             <input type="text" id="modalNome" name="nome" class="form-control" placeholder="Ex: Sala 101" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold" for="modalAndar">Andar</label>
-                            <input type="text" id="modalAndar" name="andar" class="form-control" placeholder="Ex: 1º Andar" required>
-                        </div>
-                        <div class="col-md-6">
                             <label class="form-label fw-semibold" for="modalCapacidade">Capacidade</label>
                             <input type="number" min="1" id="modalCapacidade" name="capacidade" class="form-control" placeholder="Ex: 20" required>
                         </div>
@@ -157,7 +151,6 @@
                             <select class="form-select" id="modalStatus" name="status" required>
                                 <option value="" selected disabled>Selecione</option>
                                 <option value="Disponivel">Disponivel</option>
-                                <option value="Ocupada">Ocupada</option>
                                 <option value="Em Manutencao">Em Manutencao</option>
                             </select>
                         </div>
@@ -171,7 +164,7 @@
                             </select>
                         </div>
                         <div class="col-12">
-                            <label class="form-label fw-semibold" for="modalEquip">Equipamentos (separados por vírgula)</label>
+                            <label class="form-label fw-semibold" for="modalEquip">Equipamentos (separados por virgula)</label>
                             <input type="text" id="modalEquip" name="equipamentos" class="form-control" placeholder="Projetor, Quadro branco, Ar condicionado">
                         </div>
                         <div class="col-12">
@@ -196,7 +189,7 @@
         if (window.lucide) {
             window.lucide.createIcons();
         }
-        // Busca por nome ou andar
+        // Busca por nome ou tipo
         const searchInput = document.getElementById("searchInput");
         const tableRows = document.querySelectorAll("#salasTableBody tr");
 
@@ -204,8 +197,8 @@
             const term = searchInput.value.toLowerCase().trim();
             tableRows.forEach((row) => {
                 const nome = row.getAttribute("data-nome")?.toLowerCase() || "";
-                const andar = row.getAttribute("data-andar")?.toLowerCase() || "";
-                const matches = nome.includes(term) || andar.includes(term);
+                const tipo = row.getAttribute("data-tipo")?.toLowerCase() || "";
+                const matches = nome.includes(term) || tipo.includes(term);
                 row.style.display = matches ? "" : "none";
             });
 

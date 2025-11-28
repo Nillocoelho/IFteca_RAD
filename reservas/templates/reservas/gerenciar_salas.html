@@ -50,11 +50,11 @@
             <thead class="table-light">
               <tr>
                 <th>Nome</th>
-                <th>Andar</th>
+                <th>Tipo</th>
                 <th>Capacidade</th>
                 <th>Status</th>
                 <th>Equipamentos</th>
-                <th>Ações</th>
+                <th>Acoes</th>
               </tr>
             </thead>
             <tbody id="salasTableBody">
@@ -93,10 +93,6 @@
                     <option value="{{ key }}">{{ label }}</option>
                   {% endfor %}
                 </select>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Localização / Andar</label>
-                <input id="modalAndar" name="localizacao" class="form-control" />
               </div>
               <div class="col-12">
                 <label class="form-label">Equipamentos (vírgula separado)</label>
