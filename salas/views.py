@@ -101,7 +101,7 @@ def _fallback_salas():
         {
             "id": 101,
             "nome": "Sala 101",
-            "tipo": "Individual",
+            "tipo": "Coletiva",
             "capacidade": 20,
             "status": "Disponivel",
             "status_class": "",
@@ -121,7 +121,7 @@ def _fallback_salas():
         {
             "id": 103,
             "nome": "Sala 103",
-            "tipo": "Individual",
+            "tipo": "Auditorio",
             "capacidade": 25,
             "status": "Em Manutencao",
             "status_class": "",

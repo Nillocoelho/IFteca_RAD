@@ -4,7 +4,7 @@ from django.db import models
 
 
 class Sala(models.Model):
-    TIPO_CHOICES = [("Individual", "Individual"), ("Coletiva", "Coletiva"), ("Auditorio", "Auditorio")]
+    TIPO_CHOICES = [("Coletiva", "Coletiva"), ("Auditorio", "Auditorio")]
 
     nome = models.CharField(max_length=255, unique=True)
     capacidade = models.PositiveIntegerField(validators=[MinValueValidator(1)])
