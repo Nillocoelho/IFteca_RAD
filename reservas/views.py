@@ -262,3 +262,188 @@ def gerenciar_salas_ui(request):
     return render(request, 'reservas/gerenciar_salas.html', {'tipos': tipos})
 
 
+@login_required(login_url="/login/")
+def minhas_reservas(request):
+    """
+    Renderiza a tela de 'Minhas Reservas' para estudantes.
+    Mostra as reservas ativas e anteriores do usuário logado.
+    """
+    usuario = request.user.username
+    agora = timezone.now()
+    
+    # Reservas ativas (futuras ou em andamento)
+    reservas_ativas = Reserva.objects.filter(
+        usuario=usuario,
+        fim__gte=agora
+    ).select_related('sala').order_by('inicio')
+    
+    # Reservas anteriores (já concluídas)
+    reservas_anteriores = Reserva.objects.filter(
+        usuario=usuario,
+        fim__lt=agora
+    ).select_related('sala').order_by('-inicio')
+    
+    # Total de reservas
+    total_reservas = Reserva.objects.filter(usuario=usuario).count()
+    
+    context = {
+        'reservas_ativas': reservas_ativas,
+        'reservas_anteriores': reservas_anteriores,
+        'total_reservas': total_reservas,
+    }
+    
+    return render(request, 'reservas/minhas_reservas.html', context)
+
+
+@login_required(login_url="/login/")
+def confirmacao_reserva(request):
+    """Renderiza a tela de confirmação de reserva."""
+    return render(request, 'reservas/confirmacao_reserva.html')
+
+
+@csrf_exempt
+def api_horarios_disponiveis(request, sala_id):
+    """
+    API GET para buscar horários disponíveis de uma sala em uma data específica.
+    Query params: ?data=YYYY-MM-DD
+    """
+    if request.method != "GET":
+        return JsonResponse({"detail": "Método não permitido."}, status=405)
+    
+    try:
+        sala = Sala.objects.get(id=sala_id)
+    except Sala.DoesNotExist:
+        return JsonResponse({"detail": "Sala não encontrada."}, status=404)
+    
+    data_str = request.GET.get('data')
+    if not data_str:
+        return JsonResponse({"detail": "Parâmetro 'data' é obrigatório (formato: YYYY-MM-DD)."}, status=400)
+    
+    try:
+        from datetime import datetime
+        data_selecionada = datetime.strptime(data_str, '%Y-%m-%d').date()
+    except ValueError:
+        return JsonResponse({"detail": "Formato de data inválido. Use YYYY-MM-DD."}, status=400)
+    
+    # Define os horários padrão (2 horas cada)
+    horarios_padrao = [
+        ("08:00", "10:00"),
+        ("10:00", "12:00"),
+        ("12:00", "14:00"),
+        ("14:00", "16:00"),
+        ("16:00", "18:00"),
+        ("18:00", "20:00"),
+        ("20:00", "22:00"),
+    ]
+    
+    # Busca reservas existentes para essa sala nessa data
+    from datetime import datetime as dt, time as dt_time
+    from django.utils import timezone
+    
+    reservas_dia = Reserva.objects.filter(
+        sala=sala,
+        inicio__date=data_selecionada
+    )
+    
+    horarios_disponiveis = []
+    for inicio_str, fim_str in horarios_padrao:
+        # Cria datetime timezone-aware para verificar conflitos
+        inicio_time = dt.strptime(inicio_str, '%H:%M').time()
+        fim_time = dt.strptime(fim_str, '%H:%M').time()
+        
+        inicio_dt = timezone.make_aware(dt.combine(data_selecionada, inicio_time))
+        fim_dt = timezone.make_aware(dt.combine(data_selecionada, fim_time))
+        
+        # Verifica se há conflito com alguma reserva existente
+        conflito = reservas_dia.filter(
+            inicio__lt=fim_dt,
+            fim__gt=inicio_dt
+        ).exists()
+        
+        horarios_disponiveis.append({
+            "inicio": inicio_str,
+            "fim": fim_str,
+            "range": f"{inicio_str} - {fim_str}",
+            "disponivel": not conflito
+        })
+    
+    return JsonResponse(horarios_disponiveis, safe=False, status=200)
+
+
+@login_required(login_url="/login/")
+@csrf_exempt
+def api_criar_reserva(request):
+    """
+    API POST para criar uma nova reserva.
+    Body JSON: {"sala_id": 1, "data": "YYYY-MM-DD", "inicio": "HH:MM", "fim": "HH:MM"}
+    """
+    if request.method != "POST":
+        return JsonResponse({"detail": "Método não permitido."}, status=405)
+    
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+    except json.JSONDecodeError:
+        return JsonResponse({"detail": "JSON inválido."}, status=400)
+    
+    # Validações
+    required = ["sala_id", "data", "inicio", "fim"]
+    missing = [f for f in required if f not in data]
+    if missing:
+        return JsonResponse({"detail": f"Campos obrigatórios faltando: {', '.join(missing)}"}, status=400)
+    
+    try:
+        sala = Sala.objects.get(id=data["sala_id"])
+    except Sala.DoesNotExist:
+        return JsonResponse({"detail": "Sala não encontrada."}, status=404)
+    
+    try:
+        from datetime import datetime as dt
+        data_reserva = dt.strptime(data["data"], '%Y-%m-%d').date()
+        hora_inicio = dt.strptime(data["inicio"], '%H:%M').time()
+        hora_fim = dt.strptime(data["fim"], '%H:%M').time()
+        
+        inicio_dt = dt.combine(data_reserva, hora_inicio)
+        fim_dt = dt.combine(data_reserva, hora_fim)
+        
+        # Adiciona timezone
+        from django.utils import timezone as tz
+        inicio_dt = tz.make_aware(inicio_dt)
+        fim_dt = tz.make_aware(fim_dt)
+        
+    except ValueError as e:
+        return JsonResponse({"detail": f"Formato de data/hora inválido: {str(e)}"}, status=400)
+    
+    # Verifica se já não há conflito
+    conflito = Reserva.objects.filter(
+        sala=sala,
+        inicio__lt=fim_dt,
+        fim__gt=inicio_dt
+    ).exists()
+    
+    if conflito:
+        return JsonResponse({"detail": "Este horário já está reservado."}, status=400)
+    
+    # Cria a reserva
+    reserva = Reserva.objects.create(
+        sala=sala,
+        usuario=request.user.username,
+        inicio=inicio_dt,
+        fim=fim_dt
+    )
+    
+    logger.info(f"Reserva criada: {reserva.id} - Sala {sala.nome} - Usuário {request.user.username}")
+    
+    return JsonResponse({
+        "id": reserva.id,
+        "sala": {
+            "id": sala.id,
+            "nome": sala.nome,
+            "localizacao": getattr(sala, 'localizacao', '')
+        },
+        "data": data_reserva.strftime('%d/%m/%Y'),
+        "horario": f"{data['inicio']} - {data['fim']}",
+        "inicio": reserva.inicio.isoformat(),
+        "fim": reserva.fim.isoformat(),
+    }, status=201)
+
+

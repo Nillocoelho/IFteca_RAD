@@ -24,11 +24,21 @@ class LoginView(APIView):
 
         token, created = Token.objects.get_or_create(user=user)
 
+        # Determina para onde redirecionar baseado no tipo de usuário
+        if user.is_staff or user.is_superuser:
+            # Admins vão para gerenciar salas
+            redirect_url = reverse("gerenciar_salas_ui")
+        else:
+            # Estudantes vão para minhas reservas
+            redirect_url = reverse("minhas_reservas")
+
         return Response(
             {
                 "token": token.key,
                 "user_id": user.id,
                 "email": user.email,
+                "redirect_url": redirect_url,
+                "is_staff": user.is_staff,
             }
         )
 
