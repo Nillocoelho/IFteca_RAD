@@ -9,110 +9,151 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'reservas/gerenciar_salas.css' %}">
 </head>
-<body class="bg-muted" data-api-base="{% url 'salas_admin' %}">
-  <div class="container-fluid p-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<body data-api-base="{% url 'salas_admin' %}">
+  <!-- Header -->
+  <header class="admin-header">
+    <div class="header-brand">
+      <i class="bi bi-building"></i>
       <div>
-        <h1 class="h3">Gerenciar Salas</h1>
-        <p class="text-secondary mb-0">Adicione, edite ou remova salas do sistema</p>
-      </div>
-      <div>
-        <div class="d-flex align-items-center">
-          <div class="me-3 text-end">
-            <div class="small text-muted">Administrador</div>
-            <div class="fw-semibold">{{ request.user.get_full_name|default:request.user.username }}</div>
-          </div>
-          <div class="avatar-circle">A</div>
-        </div>
+        <div class="brand-title">IFTECA</div>
+        <div class="brand-subtitle">Sistema de Reserva de Salas - IFPB</div>
       </div>
     </div>
+    <div class="header-user">
+      <div class="user-info">
+        <i class="bi bi-person-circle"></i>
+        <span>Administrador</span>
+      </div>
+      <span class="admin-badge">Admin</span>
+      <a href="{% url 'logout' %}" class="btn-sair">
+        <i class="bi bi-box-arrow-right"></i>
+        <span>Sair</span>
+      </a>
+    </div>
+  </header>
 
-    <div class="card shadow-sm">
-      <div class="card-header d-flex justify-content-between align-items-center">
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <nav class="sidebar-nav">
+        <a href="{% url 'minhas_reservas' %}" class="nav-item">
+          <i class="bi bi-grid"></i>
+          <span>Minhas Reservas</span>
+        </a>
+        <a href="#" class="nav-item active">
+          <i class="bi bi-door-open"></i>
+          <span>Gerenciar Salas</span>
+        </a>
+        <a href="#" class="nav-item">
+          <i class="bi bi-people"></i>
+          <span>Gerenciar Usuários</span>
+        </a>
+        <a href="#" class="nav-item">
+          <i class="bi bi-calendar-check"></i>
+          <span>Gerenciar Reservas</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+      <div class="content-header">
         <div>
-          <h5 class="mb-0">Lista de Salas</h5>
-          <small class="text-muted">Visualize todas as salas cadastradas no sistema</small>
-        </div>
-        <div class="d-flex align-items-center gap-3">
-          <div class="input-group" style="max-width:320px;">
-            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-            <input id="searchInput" class="form-control" placeholder="Buscar sala..." />
-          </div>
-          <button id="btnAdd" class="btn btn-success add-large" data-bs-toggle="modal" data-bs-target="#modalSala">
-            <i class="bi bi-plus-lg me-2"></i>Adicionar Sala
-          </button>
+          <h1>Gerenciar Salas</h1>
+          <p class="text-muted">Adicione, edite ou remova salas do sistema</p>
         </div>
       </div>
-      <div class="card-body">
-        <div id="feedback" class="alert d-none" role="alert"></div>
-        <div class="table-responsive">
-          <table class="table align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th>Nome</th>
-                <th>Tipo</th>
-                <th>Capacidade</th>
-                <th>Status</th>
-                <th>Equipamentos</th>
-                <th>Acoes</th>
-              </tr>
-            </thead>
-            <tbody id="salasTableBody">
-              <tr class="js-empty-row"><td colspan="6" class="text-center text-muted py-4">Nenhuma sala cadastrada ainda.</td></tr>
-            </tbody>
-          </table>
+
+      <div class="content-body">
+        <div class="salas-card">
+          <div class="card-header">
+            <div>
+              <h2>Lista de Salas</h2>
+            </div>
+            <div class="header-actions">
+              <div class="search-box">
+                <i class="bi bi-search"></i>
+                <input id="searchInput" type="text" placeholder="Buscar sala..." />
+              </div>
+              <button id="btnAdd" class="btn-add" data-bs-toggle="modal" data-bs-target="#modalSala">
+                <i class="bi bi-plus-lg"></i>
+                Adicionar Sala
+              </button>
+            </div>
+          </div>
+          
+          <div id="feedback" class="alert d-none" role="alert"></div>
+          
+          <div class="table-container">
+            <table class="salas-table">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Andar</th>
+                  <th>Capacidade</th>
+                  <th>Status</th>
+                  <th>Equipamentos</th>
+                  <th class="text-center">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="salasTableBody">
+                <tr class="js-empty-row"><td colspan="6" class="text-center text-muted py-4">Nenhuma sala cadastrada ainda.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  </div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="modalSala" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 id="modalTitle" class="modal-title">Adicionar Nova Sala</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div id="modalErrors" class="alert alert-danger d-none"><ul id="modalErrorsList" class="mb-0"></ul></div>
+          <form id="modalSalaForm" class="row g-3">
+            {% csrf_token %}
+            <div class="col-md-6">
+              <label class="form-label">Nome da Sala</label>
+              <input id="modalNome" name="nome" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Capacidade</label>
+              <input id="modalCapacidade" name="capacidade" type="number" min="1" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Tipo</label>
+              <select id="modalTipo" name="tipo" class="form-select" required>
+                <option value="" disabled selected>Selecione</option>
+                {% for key,label in tipos %}
+                  <option value="{{ key }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Equipamentos (vírgula separado)</label>
+              <input id="modalEquip" name="equipamentos" class="form-control" placeholder="Projetor, Quadro branco" />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Descrição</label>
+              <textarea id="modalDesc" name="descricao" rows="3" class="form-control"></textarea>
+            </div>
+            <input type="hidden" id="modalSalaId" />
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button id="modalSubmit" type="button" class="btn btn-success">Adicionar Sala</button>
         </div>
       </div>
     </div>
-
-    <!-- Modal -->
-    <div class="modal fade" id="modalSala" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 id="modalTitle" class="modal-title">Adicionar Nova Sala</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <div id="modalErrors" class="alert alert-danger d-none"><ul id="modalErrorsList" class="mb-0"></ul></div>
-            <form id="modalSalaForm" class="row g-3">
-              {% csrf_token %}
-              <div class="col-md-6">
-                <label class="form-label">Nome da Sala</label>
-                <input id="modalNome" name="nome" class="form-control" required />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Capacidade</label>
-                <input id="modalCapacidade" name="capacidade" type="number" min="1" class="form-control" required />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Tipo</label>
-                <select id="modalTipo" name="tipo" class="form-select" required>
-                  <option value="" disabled selected>Selecione</option>
-                  {% for key,label in tipos %}
-                    <option value="{{ key }}">{{ label }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              <div class="col-12">
-                <label class="form-label">Equipamentos (vírgula separado)</label>
-                <input id="modalEquip" name="equipamentos" class="form-control" placeholder="Projetor, Quadro branco" />
-              </div>
-              <div class="col-12">
-                <label class="form-label">Descrição</label>
-                <textarea id="modalDesc" name="descricao" rows="3" class="form-control"></textarea>
-              </div>
-              <input type="hidden" id="modalSalaId" />
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button id="modalSubmit" type="button" class="btn btn-success">Adicionar Sala</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

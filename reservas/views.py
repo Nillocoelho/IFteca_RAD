@@ -5,6 +5,7 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
+from django.db import models
 
 # Use the canonical Sala model from the `salas` app to avoid duplication
 from salas.models import Sala
@@ -98,6 +99,7 @@ def salas_admin(request):
         if isinstance(equipamentos, str):
             equipamentos = [e.strip() for e in equipamentos.split(',') if e.strip()]
         status = data.get('status') or 'Disponivel'
+        descricao = data.get('descricao', '')
 
         sala = Sala.objects.create(
             nome=data["nome"],
@@ -106,6 +108,7 @@ def salas_admin(request):
             localizacao=localizacao,
             equipamentos=equipamentos,
             status=status,
+            descricao=descricao,
         )
 
         logger.info(
@@ -122,6 +125,8 @@ def salas_admin(request):
                 "capacidade": sala.capacidade,
                 "tipo": sala.tipo,
                 "localizacao": sala.localizacao,
+                "equipamentos": sala.equipamentos,
+                "descricao": sala.descricao,
             },
             status=201,
         )
@@ -181,9 +186,17 @@ def atualizar_sala(request, sala_id):
             status=400,
         )
 
+    # Equipamentos e descrição
+    equipamentos = data.get('equipamentos', sala.equipamentos)
+    if isinstance(equipamentos, str):
+        equipamentos = [e.strip() for e in equipamentos.split(',') if e.strip()]
+    descricao = data.get('descricao', sala.descricao)
+
     sala.nome = nome
     sala.capacidade = capacidade
     sala.tipo = tipo
+    sala.equipamentos = equipamentos
+    sala.descricao = descricao
     sala.save()
 
     return JsonResponse(
@@ -193,6 +206,8 @@ def atualizar_sala(request, sala_id):
             "capacidade": sala.capacidade,
             "tipo": sala.tipo,
             "localizacao": sala.localizacao,
+            "equipamentos": sala.equipamentos,
+            "descricao": sala.descricao,
         },
         status=200,
     )
@@ -271,16 +286,18 @@ def minhas_reservas(request):
     usuario = request.user.username
     agora = timezone.now()
     
-    # Reservas ativas (futuras ou em andamento)
+    # Reservas ativas (futuras e não canceladas)
     reservas_ativas = Reserva.objects.filter(
         usuario=usuario,
-        fim__gte=agora
+        fim__gte=agora,
+        cancelada=False
     ).select_related('sala').order_by('inicio')
     
-    # Reservas anteriores (já concluídas)
+    # Reservas anteriores (já concluídas ou canceladas)
     reservas_anteriores = Reserva.objects.filter(
-        usuario=usuario,
-        fim__lt=agora
+        usuario=usuario
+    ).filter(
+        models.Q(fim__lt=agora) | models.Q(cancelada=True)
     ).select_related('sala').order_by('-inicio')
     
     # Total de reservas
@@ -299,6 +316,30 @@ def minhas_reservas(request):
 def confirmacao_reserva(request):
     """Renderiza a tela de confirmação de reserva."""
     return render(request, 'reservas/confirmacao_reserva.html')
+
+
+@login_required(login_url="/login/")
+def detalhes_reserva(request, reserva_id):
+    """Renderiza a tela de detalhes de uma reserva específica."""
+    try:
+        reserva = Reserva.objects.get(id=reserva_id, usuario=request.user.username)
+    except Reserva.DoesNotExist:
+        return render(request, '404.html', status=404)
+    
+    # Determina o status da reserva
+    agora = timezone.now()
+    if reserva.cancelada:
+        status = 'Cancelada'
+    elif reserva.fim < agora:
+        status = 'Concluída'
+    else:
+        status = 'Ativa'
+    
+    context = {
+        'reserva': reserva,
+        'status': status,
+    }
+    return render(request, 'reservas/detalhes_reserva.html', context)
 
 
 @csrf_exempt
@@ -336,14 +377,17 @@ def api_horarios_disponiveis(request, sala_id):
         ("20:00", "22:00"),
     ]
     
-    # Busca reservas existentes para essa sala nessa data
+    # Busca reservas existentes para essa sala nessa data (não canceladas)
     from datetime import datetime as dt, time as dt_time
     from django.utils import timezone
     
     reservas_dia = Reserva.objects.filter(
         sala=sala,
-        inicio__date=data_selecionada
+        inicio__date=data_selecionada,
+        cancelada=False
     )
+    
+    agora = timezone.now()
     
     horarios_disponiveis = []
     for inicio_str, fim_str in horarios_padrao:
@@ -353,6 +397,9 @@ def api_horarios_disponiveis(request, sala_id):
         
         inicio_dt = timezone.make_aware(dt.combine(data_selecionada, inicio_time))
         fim_dt = timezone.make_aware(dt.combine(data_selecionada, fim_time))
+        
+        # Verifica se o horário já passou
+        horario_passado = inicio_dt < agora
         
         # Verifica se há conflito com alguma reserva existente
         conflito = reservas_dia.filter(
@@ -364,7 +411,7 @@ def api_horarios_disponiveis(request, sala_id):
             "inicio": inicio_str,
             "fim": fim_str,
             "range": f"{inicio_str} - {fim_str}",
-            "disponivel": not conflito
+            "disponivel": not conflito and not horario_passado
         })
     
     return JsonResponse(horarios_disponiveis, safe=False, status=200)
@@ -413,15 +460,36 @@ def api_criar_reserva(request):
     except ValueError as e:
         return JsonResponse({"detail": f"Formato de data/hora inválido: {str(e)}"}, status=400)
     
-    # Verifica se já não há conflito
+    # Validação: Não permitir reservas em datas/horários passados
+    agora = timezone.now()
+    if inicio_dt < agora:
+        return JsonResponse({
+            "detail": "Não é possível fazer reservas para datas ou horários que já passaram."
+        }, status=400)
+    
+    # Verifica se o usuário já tem outra reserva neste horário (não cancelada)
+    reserva_usuario = Reserva.objects.filter(
+        usuario=request.user.username,
+        inicio__lt=fim_dt,
+        fim__gt=inicio_dt,
+        cancelada=False
+    ).first()
+    
+    if reserva_usuario:
+        return JsonResponse({
+            "detail": f"Você já tem uma reserva para este horário na sala {reserva_usuario.sala.nome}."
+        }, status=400)
+    
+    # Verifica se já não há conflito na sala (apenas reservas não canceladas)
     conflito = Reserva.objects.filter(
         sala=sala,
         inicio__lt=fim_dt,
-        fim__gt=inicio_dt
+        fim__gt=inicio_dt,
+        cancelada=False
     ).exists()
     
     if conflito:
-        return JsonResponse({"detail": "Este horário já está reservado."}, status=400)
+        return JsonResponse({"detail": "Este horário já está reservado para esta sala."}, status=400)
     
     # Cria a reserva
     reserva = Reserva.objects.create(
@@ -446,4 +514,34 @@ def api_criar_reserva(request):
         "fim": reserva.fim.isoformat(),
     }, status=201)
 
+
+@login_required(login_url="/login/")
+@csrf_exempt
+def api_cancelar_reserva(request, reserva_id):
+    """
+    API POST para cancelar uma reserva.
+    """
+    if request.method != "POST":
+        return JsonResponse({"error": "Método não permitido."}, status=405)
+    
+    try:
+        reserva = Reserva.objects.get(id=reserva_id, usuario=request.user.username)
+    except Reserva.DoesNotExist:
+        return JsonResponse({"error": "Reserva não encontrada."}, status=404)
+    
+    # Verifica se a reserva já foi cancelada
+    if reserva.cancelada:
+        return JsonResponse({"error": "Esta reserva já foi cancelada."}, status=400)
+    
+    # Verifica se a reserva já passou
+    agora = timezone.now()
+    if reserva.fim < agora:
+        return JsonResponse({"error": "Não é possível cancelar uma reserva já concluída."}, status=400)
+    
+    # Marca a reserva como cancelada
+    reserva.cancelada = True
+    reserva.save()
+    logger.info(f"Reserva cancelada: {reserva_id} - Usuário {request.user.username}")
+    
+    return JsonResponse({"success": True, "message": "Reserva cancelada com sucesso."}, status=200)
 

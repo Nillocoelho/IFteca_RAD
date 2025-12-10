@@ -32,10 +32,12 @@
     </header>
 
     <main class="page-shell container-xxl">
-        <a href="#" class="back-link" onclick="return false;">
+        {% if user.is_authenticated %}
+        <a href="{% url 'minhas_reservas' %}" class="back-link">
             <i data-lucide="arrow-left"></i>
-            <span>Voltar ao Dashboard</span>
+            <span>Voltar para Minhas Reservas</span>
         </a>
+        {% endif %}
 
         <section class="page-header">
             <div class="page-title">

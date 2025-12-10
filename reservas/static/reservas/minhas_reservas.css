@@ -318,11 +318,15 @@ body.reservas-page {
     align-items: center;
     gap: 16px;
     transition: all 0.2s;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
 }
 
 .reservation-card:hover {
-    border-color: var(--gray-200);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    border-color: var(--ifpb-green);
+    box-shadow: 0 4px 12px rgba(0, 139, 69, 0.1);
+    transform: translateY(-2px);
 }
 
 .reservation-icon {
@@ -398,6 +402,11 @@ body.reservas-page {
 .status-concluida {
     background: var(--badge-completed);
     color: var(--gray-400);
+}
+
+.status-cancelada {
+    background: #ffebee;
+    color: #c62828;
 }
 
 /* ========== EMPTY STATE ========== */

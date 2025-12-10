@@ -12,6 +12,10 @@ urlpatterns = [
     # Estudantes
     path("minhas-reservas/", views.minhas_reservas, name="minhas_reservas"),
     path("confirmacao-reserva/", views.confirmacao_reserva, name="confirmacao_reserva"),
+    path("reserva/<int:reserva_id>/", views.detalhes_reserva, name="detalhes_reserva"),
+
+    # API
+    path("api/reservas/<int:reserva_id>/cancelar/", views.api_cancelar_reserva, name="api_cancelar_reserva"),
 
     # Público
     path("salas/publicas/", views.salas_publicas, name="salas_publicas"),

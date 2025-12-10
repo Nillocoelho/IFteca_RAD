@@ -91,7 +91,7 @@
                 <div class="reservations-list" id="reservasAtivasList">
                     {% if reservas_ativas %}
                         {% for reserva in reservas_ativas %}
-                        <div class="reservation-card" data-search="{{ reserva.sala.nome }}">
+                        <a href="{% url 'detalhes_reserva' reserva.id %}" class="reservation-card" data-search="{{ reserva.sala.nome }}">
                             <div class="reservation-icon">
                                 <i data-lucide="panel-right-open"></i>
                             </div>
@@ -111,7 +111,7 @@
                             <div class="reservation-status">
                                 <span class="status-badge status-ativa">Ativa</span>
                             </div>
-                        </div>
+                        </a>
                         {% endfor %}
                     {% else %}
                         <div class="empty-state">
@@ -128,7 +128,7 @@
                 <div class="reservations-list" id="reservasAnterioresList">
                     {% if reservas_anteriores %}
                         {% for reserva in reservas_anteriores %}
-                        <div class="reservation-card reservation-past" data-search="{{ reserva.sala.nome }}">
+                        <a href="{% url 'detalhes_reserva' reserva.id %}" class="reservation-card reservation-past" data-search="{{ reserva.sala.nome }}">
                             <div class="reservation-icon reservation-icon-past">
                                 <i data-lucide="panel-right-open"></i>
                             </div>
@@ -146,9 +146,13 @@
                                 </div>
                             </div>
                             <div class="reservation-status">
+                                {% if reserva.cancelada %}
+                                <span class="status-badge status-cancelada">Cancelada</span>
+                                {% else %}
                                 <span class="status-badge status-concluida">Concluída</span>
+                                {% endif %}
                             </div>
-                        </div>
+                        </a>
                         {% endfor %}
                     {% else %}
                         <div class="empty-state">
