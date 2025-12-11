@@ -34,10 +34,9 @@
         <div class="shell">
             <aside class="sidebar d-flex flex-column">
                 <nav class="nav flex-column">
-                    <a class="nav-link" href="#"><i class="bi bi-speedometer2"></i>Dashboard</a>
                     <a class="nav-link active" aria-current="page" href="{% url 'gerenciar_salas' %}"><i class="bi bi-door-open-fill"></i>Gerenciar Salas</a>
                     <a class="nav-link" href="#"><i class="bi bi-people-fill"></i>Gerenciar Usuários</a>
-                    <a class="nav-link" href="#"><i class="bi bi-calendar-event"></i>Gerenciar Reservas</a>
+                    <a class="nav-link" href="{% url 'admin_reservas' %}"><i class="bi bi-calendar-event"></i>Gerenciar Reservas</a>
                 </nav>
             </aside>
 

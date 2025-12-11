@@ -24,6 +24,8 @@ urlpatterns = [
     # APIs públicas (sem prefixo /reservas/)
     path("api/salas/<int:sala_id>/horarios/", reservas_views.api_horarios_disponiveis, name="api_horarios_disponiveis"),
     path("api/reservas/criar/", reservas_views.api_criar_reserva, name="api_criar_reserva"),
+    # Atalho para interface administrativa de reservas (compatibilidade /admin/reserva)
+    path("admin/reserva/", lambda request: redirect('/reservas/admin/reserva/')),
     
     path("", include("salas.urls")),
     path("reservas/", include("reservas.urls")),

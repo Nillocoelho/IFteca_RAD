@@ -10,6 +10,9 @@ from django.db import models
 # Use the canonical Sala model from the `salas` app to avoid duplication
 from salas.models import Sala
 from .models import Reserva
+from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.models import User
+from django.shortcuts import redirect
 
 logger = logging.getLogger(__name__)
 
@@ -340,6 +343,90 @@ def detalhes_reserva(request, reserva_id):
         'status': status,
     }
     return render(request, 'reservas/detalhes_reserva.html', context)
+
+
+@staff_member_required(login_url='/login/')
+def admin_reservas(request):
+    """Renderiza a interface administrativa de gerenciamento de reservas.
+    Suporta filtros por sala (`sala` query param) e por data (`data` YYYY-MM-DD).
+    """
+    salas = Sala.objects.all().order_by('nome')
+    reservas = Reserva.objects.select_related('sala').all().order_by('-inicio')
+
+    # Filtros via query params
+    sala_id = request.GET.get('sala')
+    data_str = request.GET.get('data')
+    if sala_id:
+        try:
+            reservas = reservas.filter(sala__id=int(sala_id))
+        except (ValueError, TypeError):
+            pass
+    if data_str:
+        try:
+            from datetime import datetime as _dt
+            data_filter = _dt.strptime(data_str, '%Y-%m-%d').date()
+            reservas = reservas.filter(inicio__date=data_filter)
+        except ValueError:
+            pass
+
+    # Estatísticas
+    agora = timezone.now()
+    total = Reserva.objects.count()
+    ativos = Reserva.objects.filter(fim__gte=agora, cancelada=False).count()
+    concluidos = Reserva.objects.filter(fim__lt=agora, cancelada=False).count()
+    canceladas = Reserva.objects.filter(cancelada=True).count()
+
+    # Enrich reservas with user info
+    reservas_enriched = []
+    for r in reservas:
+        usuario_obj = User.objects.filter(username=r.usuario).first()
+        full_name = usuario_obj.get_full_name() if usuario_obj and (usuario_obj.first_name or usuario_obj.last_name) else r.usuario
+        email = usuario_obj.email if usuario_obj else ''
+        criada_em = getattr(r, 'created_at', None) or r.inicio
+        reservas_enriched.append({
+            'obj': r,
+            'usuario_nome': full_name,
+            'usuario_email': email,
+            'criada_em': criada_em,
+        })
+
+    context = {
+        'salas': salas,
+        'reservas': reservas_enriched,
+        'total': total,
+        'ativos': ativos,
+        'concluidos': concluidos,
+        'canceladas': canceladas,
+        'filtro_sala': sala_id or '',
+        'filtro_data': data_str or '',
+        'now': agora,
+    }
+    return render(request, 'reservas/admin_reservas.html', context)
+
+
+@csrf_exempt
+@staff_member_required(login_url='/login/')
+def api_admin_cancel_reserva(request, reserva_id):
+    """API para administradores cancelarem qualquer reserva."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método não permitido.'}, status=405)
+
+    try:
+        reserva = Reserva.objects.get(id=reserva_id)
+    except Reserva.DoesNotExist:
+        return JsonResponse({'error': 'Reserva não encontrada.'}, status=404)
+
+    if reserva.cancelada:
+        return JsonResponse({'error': 'Esta reserva já foi cancelada.'}, status=400)
+
+    agora = timezone.now()
+    if reserva.fim < agora:
+        return JsonResponse({'error': 'Não é possível cancelar uma reserva já concluída.'}, status=400)
+
+    reserva.cancelada = True
+    reserva.save()
+    logger.info(f"Reserva cancelada (admin): {reserva_id} - Admin {request.user.username}")
+    return JsonResponse({'success': True, 'message': 'Reserva cancelada com sucesso.'}, status=200)
 
 
 @csrf_exempt

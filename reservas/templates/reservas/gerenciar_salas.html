@@ -36,10 +36,6 @@
     <!-- Sidebar -->
     <aside class="admin-sidebar">
       <nav class="sidebar-nav">
-        <a href="{% url 'minhas_reservas' %}" class="nav-item">
-          <i class="bi bi-grid"></i>
-          <span>Minhas Reservas</span>
-        </a>
         <a href="#" class="nav-item active">
           <i class="bi bi-door-open"></i>
           <span>Gerenciar Salas</span>
@@ -48,7 +44,7 @@
           <i class="bi bi-people"></i>
           <span>Gerenciar Usuários</span>
         </a>
-        <a href="#" class="nav-item">
+        <a href="{% url 'admin_reservas' %}" class="nav-item">
           <i class="bi bi-calendar-check"></i>
           <span>Gerenciar Reservas</span>
         </a>
