@@ -24,10 +24,17 @@
                 <i data-lucide="user-round"></i>
                 <span>{{ student_name|default:"Aluno convidado" }}</span>
             </div>
-            <a class="logout-link" href="{% url 'logout' %}">
-                <i data-lucide="log-out"></i>
-                <span>Sair</span>
-            </a>
+            {% if is_authenticated %}
+                <a class="logout-link" href="{% url 'logout' %}">
+                    <i data-lucide="log-out"></i>
+                    <span>Sair</span>
+                </a>
+            {% else %}
+                <a class="logout-link" href="{% url 'login_page' %}">
+                    <i data-lucide="log-in"></i>
+                    <span>Login</span>
+                </a>
+            {% endif %}
         </div>
     </header>
 

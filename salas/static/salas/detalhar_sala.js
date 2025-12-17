@@ -13,6 +13,48 @@ function getCsrfToken() {
     return match ? decodeURIComponent(match[1]) : "";
 }
 
+// ========== SNACKBAR ==========
+function showSnackbar(message, type = 'info') {
+    const snackbar = document.getElementById('snackbar');
+    if (!snackbar) return;
+    
+    // Remove classes anteriores
+    snackbar.className = 'snackbar';
+    
+    // Adiciona a classe do tipo
+    snackbar.classList.add(type);
+    
+    // Define o conteúdo
+    let icon = '';
+    switch(type) {
+        case 'success':
+            icon = '<i data-lucide="check-circle"></i>';
+            break;
+        case 'error':
+            icon = '<i data-lucide="x-circle"></i>';
+            break;
+        case 'warning':
+            icon = '<i data-lucide="alert-triangle"></i>';
+            break;
+        case 'info':
+            icon = '<i data-lucide="info"></i>';
+            break;
+    }
+    
+    snackbar.innerHTML = icon + '<span>' + message + '</span>';
+    
+    // Mostra o snackbar
+    snackbar.classList.add('show');
+    
+    // Re-renderiza os ícones
+    if (window.lucide) window.lucide.createIcons();
+    
+    // Remove após 3 segundos
+    setTimeout(() => {
+        snackbar.classList.remove('show');
+    }, 3000);
+}
+
 // ========== CALENDAR ==========
 function renderCalendar() {
     const calendarGrid = document.getElementById("calendarGrid");
@@ -116,6 +158,7 @@ async function loadAvailableSlots() {
     } catch (error) {
         console.error('Erro ao carregar horários:', error);
         slotsList.innerHTML = `<div class="text-center text-danger py-4"><p class="mb-0">Erro ao carregar horários: ${error.message}</p></div>`;
+        showSnackbar('Erro ao carregar horários disponíveis!', 'error');
     }
 }
 
@@ -160,6 +203,12 @@ function renderSlots(slots) {
 
 // ========== SELECT SLOT ==========
 function selectSlot(slot) {
+    // Verifica se o usuário está autenticado
+    if (!window.IS_AUTHENTICATED) {
+        showSnackbar('Você precisa estar logado para fazer uma reserva!', 'error');
+        return;
+    }
+    
     state.selectedSlot = slot;
     
     // Update UI
@@ -194,7 +243,16 @@ function showBookingSummary() {
 
 // ========== CONFIRM BOOKING ==========
 async function confirmBooking() {
-    if (!state.selectedSlot) return;
+    if (!state.selectedSlot) {
+        showSnackbar('Selecione um horário primeiro!', 'warning');
+        return;
+    }
+    
+    // Verifica autenticação novamente antes de confirmar
+    if (!window.IS_AUTHENTICATED) {
+        showSnackbar('Você precisa estar logado para fazer uma reserva!', 'error');
+        return;
+    }
     
     const btn = document.getElementById('btnConfirmBooking');
     const originalHTML = btn.innerHTML;
@@ -217,13 +275,29 @@ async function confirmBooking() {
                 data: dateParam,
                 inicio: inicio,
                 fim: fim
-            })
+            }),
+            redirect: 'manual' // Previne redirecionamento automático
         });
         
-        // Check for authentication errors
-        if (response.status === 401 || response.status === 403) {
-            alert('Você precisa estar logado para fazer uma reserva. Redirecionando para login...');
-            window.location.href = '/login/?next=' + encodeURIComponent(window.location.pathname);
+        // Check for redirects (302) or authentication errors (401/403)
+        if (response.type === 'opaqueredirect' || response.status === 302 || response.status === 401 || response.status === 403) {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+            if (window.lucide) window.lucide.createIcons();
+            
+            showSnackbar('Você precisa estar logado para fazer uma reserva!', 'error');
+            return;
+        }
+        
+        const contentType = response.headers.get('content-type');
+        
+        // Se retornou HTML ao invés de JSON, provavelmente foi redirecionado
+        if (contentType && contentType.includes('text/html')) {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+            if (window.lucide) window.lucide.createIcons();
+            
+            showSnackbar('Você precisa estar logado para fazer uma reserva!', 'error');
             return;
         }
         
@@ -233,15 +307,31 @@ async function confirmBooking() {
             throw new Error(data.detail || 'Erro ao criar reserva');
         }
         
+        // Mostra mensagem de sucesso
+        showSnackbar('Reserva criada com sucesso!', 'success');
+        
         // Save reservation data to sessionStorage
         sessionStorage.setItem('ultimaReserva', JSON.stringify(data));
         
-        // Redirect to confirmation page
-        window.location.href = '/reservas/confirmacao-reserva/';
+        // Redirect to confirmation page after a short delay
+        setTimeout(() => {
+            window.location.href = '/reservas/confirmacao-reserva/';
+        }, 1000);
         
     } catch (error) {
         console.error('Erro:', error);
-        alert('Erro ao confirmar reserva: ' + error.message);
+        
+        // Se o erro for de parsing JSON, pode ser um redirect
+        if (error instanceof SyntaxError) {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+            if (window.lucide) window.lucide.createIcons();
+            
+            showSnackbar('Você precisa estar logado para fazer uma reserva!', 'error');
+            return;
+        }
+        
+        showSnackbar('Erro ao confirmar reserva: ' + error.message, 'error');
         btn.disabled = false;
         btn.innerHTML = originalHTML;
         if (window.lucide) window.lucide.createIcons();

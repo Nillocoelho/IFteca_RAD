@@ -24,12 +24,22 @@
                 <i data-lucide="user-round"></i>
                 <span>{{ student_name|default:"Aluno convidado" }}</span>
             </div>
-            <a class="logout-link" href="{% url 'logout' %}">
-                <i data-lucide="log-out"></i>
-                <span>Sair</span>
-            </a>
+            {% if is_authenticated %}
+                <a class="logout-link" href="{% url 'logout' %}">
+                    <i data-lucide="log-out"></i>
+                    <span>Sair</span>
+                </a>
+            {% else %}
+                <a class="logout-link" href="{% url 'login_page' %}">
+                    <i data-lucide="log-in"></i>
+                    <span>Login</span>
+                </a>
+            {% endif %}
         </div>
     </header>
+
+    <!-- Snackbar Container -->
+    <div id="snackbar" class="snackbar"></div>
 
     <main class="page-shell container-xxl">
         <a href="{% url 'listar_salas' %}" class="back-link">
@@ -132,6 +142,7 @@
         window.SALA_ID = {{ sala.id }};
         window.SALA_NOME = "{{ sala.nome }}";
         window.SALA_LOCALIZACAO = "{{ sala.tipo }}";
+        window.IS_AUTHENTICATED = {{ is_authenticated|yesno:"true,false" }};
     </script>
 
     <script src="https://unpkg.com/lucide@latest"></script>
