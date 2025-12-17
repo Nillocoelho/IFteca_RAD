@@ -33,7 +33,8 @@ def salas_admin(request):
     # --------------- GET lista ---------------
     if request.method == "GET":
         logger.info("salas_admin GET recebido")
-        salas = Sala.objects.all().order_by("nome")
+        # Admin vê todas as salas, mas filtra apenas as ativas
+        salas = Sala.objects.filter(ativo=True).order_by("nome")
 
         data = [
             {
@@ -44,10 +45,11 @@ def salas_admin(request):
                 "localizacao": s.localizacao,
                 "equipamentos": getattr(s, 'equipamentos', []),
                 "status": getattr(s, 'status', 'Disponivel'),
+                "ativo": s.ativo,  # Incluído para futuras funcionalidades
             }
             for s in salas
         ]
-        logger.info("salas_admin GET retornando %s salas", len(data))
+        logger.info("salas_admin GET retornando %s salas ativas", len(data))
         return JsonResponse(data, safe=False, status=200)
 
     # --------------- POST cria ---------------
@@ -69,8 +71,8 @@ def salas_admin(request):
                 status=400,
             )
 
-        # Nome único
-        if Sala.objects.filter(nome=data["nome"]).exists():
+        # Nome único (considera apenas salas ativas)
+        if Sala.objects.filter(nome=data["nome"], ativo=True).exists():
             logger.warning("salas_admin POST duplicado para nome='%s'", data["nome"])
             return JsonResponse({"detail": "Já existe uma sala com esse nome."}, status=400)
 
@@ -236,14 +238,22 @@ def deletar_sala(request, sala_id):
     except Sala.DoesNotExist:
         return JsonResponse({"detail": "Sala não encontrada."}, status=404)
 
-    # CA2 — regra crítica: bloquear exclusão se houver reservas futuras
-    if Reserva.objects.filter(sala=sala, inicio__gt=timezone.now()).exists():
+    # CA2 — regra crítica: bloquear exclusão se houver reservas futuras (não canceladas)
+    reservas_futuras = Reserva.objects.filter(
+        sala=sala,
+        cancelada=False,
+        inicio__gt=timezone.now()
+    ).exists()
+    
+    if reservas_futuras:
         return JsonResponse(
             {"detail": "A sala possui reservas futuras e não pode ser excluída."},
             status=400,
         )
 
-    sala.delete()
+    # Soft delete: marca como inativa ao invés de deletar
+    sala.ativo = False
+    sala.save()
 
     return JsonResponse({"detail": "Sala excluída com sucesso."}, status=200)
 

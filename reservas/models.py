@@ -7,7 +7,7 @@ from django.utils import timezone
 class Reserva(models.Model):
     sala = models.ForeignKey(
         'salas.Sala',
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,  # Impede deleção acidental; use soft delete
         related_name="reservas",
     )
 

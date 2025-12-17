@@ -1,5 +1,44 @@
 function getCsrfToken(){const m=document.cookie.match(/csrftoken=([^;]+)/);return m?decodeURIComponent(m[1]):""}
 
+// ========== SNACKBAR ==========
+function showSnackbar(message, type = 'info') {
+  const snackbar = document.getElementById('snackbar');
+  if (!snackbar) return;
+  
+  // Remove classes anteriores
+  snackbar.className = 'snackbar';
+  
+  // Adiciona a classe do tipo
+  snackbar.classList.add(type);
+  
+  // Define o conteúdo com ícone
+  let icon = '';
+  switch(type) {
+    case 'success':
+      icon = '<i class="bi bi-check-circle"></i>';
+      break;
+    case 'error':
+      icon = '<i class="bi bi-x-circle"></i>';
+      break;
+    case 'warning':
+      icon = '<i class="bi bi-exclamation-triangle"></i>';
+      break;
+    case 'info':
+      icon = '<i class="bi bi-info-circle"></i>';
+      break;
+  }
+  
+  snackbar.innerHTML = icon + '<span>' + message + '</span>';
+  
+  // Mostra o snackbar
+  snackbar.classList.add('show');
+  
+  // Remove após 4 segundos
+  setTimeout(() => {
+    snackbar.classList.remove('show');
+  }, 4000);
+}
+
 const API_BASE=(document.body.dataset.apiBase||"/reservas/admin/salas/").replace(/\/+$/,"");
 const listUrl=`${API_BASE}/`;
 const detailUrl=id=>`${API_BASE}/${id}/`;
@@ -102,6 +141,6 @@ document.addEventListener('DOMContentLoaded',()=>{
     const edit=e.target.closest('.btn-edit');
     const del=e.target.closest('.btn-delete');
     if(edit){const id=edit.dataset.id;console.info("[salas-ui] editar sala acionado", {id});const tr=document.querySelector(`tr[data-id="${id}"]`);document.getElementById('modalTitle').textContent='Editar Sala';document.getElementById('modalNome').value=tr.querySelector('.sala-nome').textContent;document.getElementById('modalCapacidade').value=tr.querySelector('.sala-capacidade').textContent.replace(/\D/g,'');document.getElementById('modalTipo').value=tr.dataset.tipo||'';const equipField=document.getElementById('modalEquip');if(equipField){const eq=tr._meta?.equipamentos||((tr.dataset.equipamentos||'').split(',').filter(Boolean));equipField.value=eq.join(', ');}const descField=document.getElementById('modalDesc');if(descField){descField.value=tr._meta?.descricao||tr.dataset.descricao||'';}document.getElementById('modalSalaId').value=id;new bootstrap.Modal(document.getElementById('modalSala')).show();return}
-    if(del){if(!confirm('Tem certeza que deseja excluir esta sala?')) return;const id=del.dataset.id;console.info("[salas-ui] solicitando exclusão da sala", {id});const csrf=getCsrfToken();const res=await fetch(deleteUrl(id),{method:'DELETE',headers:{'X-CSRFToken':csrf}});console.info("[salas-ui] resposta exclusão", {status:res.status});if(!res.ok){alert('Erro ao excluir');return}loadAndRender();}
+    if(del){if(!confirm('Tem certeza que deseja excluir esta sala?')) return;const id=del.dataset.id;console.info("[salas-ui] solicitando exclusão da sala", {id});const csrf=getCsrfToken();try{const res=await fetch(deleteUrl(id),{method:'DELETE',headers:{'X-CSRFToken':csrf}});console.info("[salas-ui] resposta exclusão", {status:res.status});if(!res.ok){const data=await res.json().catch(()=>({}));const msg=data.detail||'Erro ao excluir sala';if(msg.toLowerCase().includes('reserva')){showSnackbar('Não é possível excluir: existem reservas para esta sala.','error');}else{showSnackbar(msg,'error');}return;}showSnackbar('Sala excluída com sucesso!','success');loadAndRender();}catch(err){console.error('[salas-ui] erro de rede ao excluir', err);showSnackbar('Erro de rede ao excluir sala','error');}}
   });
 });
