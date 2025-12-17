@@ -6,7 +6,7 @@ from django.db import models
 class Sala(models.Model):
     TIPO_CHOICES = [("Coletiva", "Coletiva"), ("Auditorio", "Auditorio")]
 
-    nome = models.CharField(max_length=255, unique=True)
+    nome = models.CharField(max_length=255)
     capacidade = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     tipo = models.CharField(max_length=50, choices=TIPO_CHOICES)
     localizacao = models.CharField(max_length=255, blank=True, null=True, verbose_name="Localizacao")
@@ -17,10 +17,22 @@ class Sala(models.Model):
         choices=[("Disponivel", "Disponivel"), ("Em Manutencao", "Em Manutencao")],
         default="Disponivel",
     )
+    ativo = models.BooleanField(
+        default=True,
+        verbose_name="Ativo",
+        help_text="Indica se a sala está ativa no sistema. Salas inativas não aparecem para usuários.",
+    )
     criado_em = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["nome"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['nome'],
+                condition=models.Q(ativo=True),
+                name='unique_nome_sala_ativa'
+            )
+        ]
 
     def __str__(self) -> str:
         return f"{self.nome} ({self.tipo})"
