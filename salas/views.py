@@ -21,7 +21,7 @@ def admin_required(view_func):
 @require_GET
 def listar_salas(request):
     # Lista de salas visivel para alunos. Usa dados reais, mas apresenta estado estatico de usuario.
-    salas_qs = Sala.objects.all()
+    salas_qs = Sala.objects.filter(ativo=True)
     salas = []
     for sala in salas_qs:
         equipamentos = getattr(sala, "equipamentos", []) or []
@@ -61,7 +61,7 @@ def detalhar_sala(request, sala_id: int):
     """Tela de detalhe/agenda da sala."""
     fallback = _fallback_salas()
     try:
-        sala_obj = Sala.objects.get(id=sala_id)
+        sala_obj = Sala.objects.get(id=sala_id, ativo=True)
         sala = {
             "id": sala_obj.id,
             "nome": sala_obj.nome,
@@ -193,6 +193,7 @@ def api_lookup_sala(request):
 @require_GET
 def gerenciar_salas(request):
     # Lista salas reais e complementa com dados de exibicao (status/equipamentos) para a UI.
+    # Admin vê todas as salas (ativas e inativas)
     salas_qs = Sala.objects.all()
 
     salas = []
@@ -210,6 +211,7 @@ def gerenciar_salas(request):
                 "status": status_label,
                 "status_class": "",  # template/JS decide classes from status
                 "equipamentos": equipamentos,
+                "ativo": sala.ativo,  # Indica se a sala foi excluída (soft delete)
             }
         )
 
@@ -260,7 +262,7 @@ def api_criar_sala(request):
     if errors:
         return JsonResponse({"errors": errors}, status=400)
 
-    if Sala.objects.filter(nome=nome).exists():
+    if Sala.objects.filter(nome=nome, ativo=True).exists():
         return JsonResponse({"errors": ["Ja existe uma sala com esse nome."]}, status=400)
 
     equipamentos = payload.get('equipamentos') or []
@@ -309,7 +311,22 @@ def api_update_delete_sala(request, sala_id):
         return JsonResponse({"errors": ["Sala nao encontrada."]}, status=404)
 
     if request.method == "DELETE":
-        sala.delete()
+        # Verifica se há reservas ativas (não canceladas e futuras)
+        from django.utils import timezone
+        reservas_ativas = sala.reservas.filter(
+            cancelada=False,
+            inicio__gte=timezone.now()
+        ).exists()
+        
+        if reservas_ativas:
+            return JsonResponse(
+                {"errors": ["Não é possível excluir esta sala pois existem reservas ativas. Aguarde até que todas as reservas sejam concluídas ou canceladas."]},
+                status=400
+            )
+        
+        # Soft delete: marca como inativa ao invés de deletar
+        sala.ativo = False
+        sala.save()
         return JsonResponse({"message": "Sala removida com sucesso.", "id": sala_id})
 
     try:
@@ -347,8 +364,8 @@ def api_update_delete_sala(request, sala_id):
     if errors:
         return JsonResponse({"errors": errors}, status=400)
 
-    # Nome duplicado
-    if nome and Sala.objects.filter(nome=nome).exclude(id=sala.id).exists():
+    # Nome duplicado (considera apenas salas ativas)
+    if nome and Sala.objects.filter(nome=nome, ativo=True).exclude(id=sala.id).exists():
         return JsonResponse({"errors": ["Ja existe outra sala com esse nome."]}, status=400)
 
     sala.nome = nome or sala.nome

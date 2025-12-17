@@ -285,6 +285,9 @@ def minhas_reservas(request):
     """
     Renderiza a tela de 'Minhas Reservas' para estudantes.
     Mostra as reservas ativas e anteriores do usuário logado.
+    
+    IMPORTANTE: select_related('sala') garante que salas inativas (soft delete)
+    ainda sejam exibidas no histórico de reservas.
     """
     usuario = request.user.username
     agora = timezone.now()
@@ -297,6 +300,7 @@ def minhas_reservas(request):
     ).select_related('sala').order_by('inicio')
     
     # Reservas anteriores (já concluídas ou canceladas)
+    # NOTA: Mesmo salas deletadas (ativo=False) aparecem aqui via ForeignKey
     reservas_anteriores = Reserva.objects.filter(
         usuario=usuario
     ).filter(
@@ -529,6 +533,10 @@ def api_criar_reserva(request):
         sala = Sala.objects.get(id=data["sala_id"])
     except Sala.DoesNotExist:
         return JsonResponse({"detail": "Sala não encontrada."}, status=404)
+    
+    # Verifica se a sala está ativa (não deletada por soft delete)
+    if not sala.ativo:
+        return JsonResponse({"detail": "Esta sala não está mais disponível para reservas."}, status=400)
     
     try:
         from datetime import datetime as dt
