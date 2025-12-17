@@ -51,6 +51,7 @@ def listar_salas(request):
         {
             "salas": salas,
             "student_name": student_name,
+            "is_authenticated": request.user.is_authenticated,
         },
     )
 
@@ -92,7 +93,12 @@ def detalhar_sala(request, sala_id: int):
     return render(
         request,
         "salas/detalhar_sala.html",
-        {"sala": sala, "slots": slots, "student_name": student_name},
+        {
+            "sala": sala, 
+            "slots": slots, 
+            "student_name": student_name,
+            "is_authenticated": request.user.is_authenticated,
+        },
     )
 
 

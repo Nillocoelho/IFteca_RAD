@@ -1,8 +1,10 @@
 import json
+from datetime import datetime, timedelta
 
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from salas.models import Sala
 
@@ -159,3 +161,74 @@ class SalaTests(TestCase):
         resp = self.client.delete(reverse("api_update_delete_sala", args=[sala.id]))
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(Sala.objects.filter(id=sala.id).exists())
+
+    # CT5.2 – Tentativa de Excluir Sala com Reservas Futuras
+    def test_tentativa_exclusao_sala_com_reservas_futuras(self):
+        from reservas.models import Reserva
+        
+        # Cria uma sala
+        sala = Sala.objects.create(nome="Sala com Reserva", capacidade=15, tipo="Coletiva")
+        
+        # Cria uma reserva futura para essa sala
+        inicio_futuro = timezone.now() + timedelta(days=2)
+        fim_futuro = inicio_futuro + timedelta(hours=2)
+        
+        Reserva.objects.create(
+            sala=sala,
+            usuario=self.admin.username,
+            inicio=inicio_futuro,
+            fim=fim_futuro
+        )
+        
+        # Loga como admin e tenta deletar a sala
+        self.login_admin()
+        
+        # Verifica que a sala existe antes da tentativa
+        self.assertTrue(Sala.objects.filter(id=sala.id).exists())
+        
+        # Tenta deletar via endpoint que tem validação de reservas futuras
+        resp = self.client.delete(reverse("deletar_sala", args=[sala.id]))
+        
+        # Deve retornar 400 (Bad Request) por causa da reserva futura
+        self.assertEqual(resp.status_code, 400)
+        
+        # Verifica que a sala ainda existe (não foi deletada)
+        self.assertTrue(Sala.objects.filter(id=sala.id).exists())
+        
+        # Verifica a mensagem de erro
+        response_data = resp.json()
+        self.assertIn("reservas futuras", response_data.get("detail", "").lower())
+    
+    # CT5.3 – Deleção de Sala com Reservas Passadas (deve permitir)
+    def test_delecao_sala_com_reservas_passadas_permitida(self):
+        from reservas.models import Reserva
+        
+        # Cria uma sala
+        sala = Sala.objects.create(nome="Sala com Reserva Passada", capacidade=12, tipo="Coletiva")
+        
+        # Cria uma reserva passada para essa sala
+        inicio_passado = timezone.now() - timedelta(days=5)
+        fim_passado = inicio_passado + timedelta(hours=2)
+        
+        Reserva.objects.create(
+            sala=sala,
+            usuario=self.admin.username,
+            inicio=inicio_passado,
+            fim=fim_passado
+        )
+        
+        # Loga como admin e tenta deletar a sala
+        self.login_admin()
+        
+        # Verifica que a sala existe antes da tentativa
+        self.assertTrue(Sala.objects.filter(id=sala.id).exists())
+        
+        # Deleta via endpoint que valida apenas reservas futuras
+        resp = self.client.delete(reverse("deletar_sala", args=[sala.id]))
+        
+        # Deve permitir a exclusão (200 OK)
+        self.assertEqual(resp.status_code, 200)
+        
+        # Verifica que a sala foi deletada
+        self.assertFalse(Sala.objects.filter(id=sala.id).exists())
+

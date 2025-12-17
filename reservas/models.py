@@ -24,6 +24,11 @@ class Reserva(models.Model):
         verbose_name="Fim da Reserva",
     )
 
+    cancelada = models.BooleanField(
+        default=False,
+        verbose_name="Cancelada",
+    )
+
     def __str__(self):
         return f"Reserva da sala {self.sala.nome} em {self.inicio.strftime('%d/%m/%Y %H:%M')}"
 

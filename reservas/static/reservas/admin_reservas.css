@@ -187,200 +187,182 @@ body {
   margin-bottom: 4px;
 }
 
-.content-header p {
+.content-header .text-muted {
   font-size: 14px;
   color: var(--text-gray);
-  margin: 0;
 }
 
-.content-body {
+/* ========== STATS CARDS ========== */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
   background: white;
-  border-radius: 12px;
   border: 1px solid var(--border-color);
-  overflow: hidden;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.stat-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-gray);
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-dark);
 }
 
 /* ========== CARD ========== */
-.salas-card {
+.card {
   background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .card-header {
   padding: 20px 24px;
   border-bottom: 1px solid var(--border-color);
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
 }
 
-.card-header h2 {
-  font-size: 18px;
+.card-header h5 {
+  font-size: 16px;
   font-weight: 600;
   color: var(--text-dark);
   margin: 0;
 }
 
-.header-actions {
+.card-body {
+  padding: 0;
+}
+
+/* ========== FILTERS ========== */
+#filterForm {
   display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.search-box {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.search-box i {
-  position: absolute;
-  left: 12px;
-  color: var(--text-gray);
-  font-size: 16px;
-}
-
-.search-box input {
-  padding: 8px 12px 8px 36px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  font-size: 14px;
-  width: 240px;
-  outline: none;
-}
-
-.search-box input:focus {
-  border-color: var(--ifpb-green);
-}
-
-.btn-add {
-  display: flex;
-  align-items: center;
   gap: 8px;
-  padding: 10px 20px;
-  background: var(--ifpb-green);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
+  align-items: center;
 }
 
-.btn-add:hover {
-  background: var(--ifpb-green-dark);
+#filterForm .form-select,
+#filterForm .form-control {
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 14px;
+  padding: 6px 12px;
+}
+
+#filterForm .btn {
+  font-size: 14px;
+  padding: 6px 16px;
+  border-radius: 6px;
 }
 
 /* ========== TABLE ========== */
-.table-container {
+.table-responsive {
   overflow-x: auto;
 }
 
-.salas-table {
+.table {
   width: 100%;
-  border-collapse: collapse;
+  font-size: 14px;
 }
 
-.salas-table thead {
+.table thead {
   background: #f9fafb;
-  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
 }
 
-.salas-table th {
+.table thead th {
   padding: 12px 24px;
-  text-align: left;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--text-gray);
+  border: none;
+}
+
+.table tbody td {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table .fw-semibold {
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.table .small {
+  font-size: 13px;
+}
+
+/* ========== BADGES ========== */
+.badge {
+  padding: 4px 10px;
+  border-radius: 12px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--text-gray);
-  text-transform: uppercase;
-  border-bottom: 1px solid var(--border-color);
 }
 
-.salas-table td {
-  padding: 16px 24px;
-  font-size: 14px;
-  border-bottom: 1px solid var(--border-color);
-  color: var(--text-dark);
+.badge.bg-primary {
+  background: #3b82f6 !important;
 }
 
-.salas-table tbody tr:hover {
-  background: #f9fafb;
+.badge.bg-secondary {
+  background: #6b7280 !important;
 }
 
-.sala-nome {
-  font-weight: 600;
+.badge.bg-danger {
+  background: #ef4444 !important;
 }
 
-.equip-tag {
-  display: inline-block;
-  background: #f3f4f6;
-  color: var(--text-dark);
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 13px;
-  margin-right: 6px;
+.badge.bg-success,
+.text-success {
+  background: var(--ifpb-green) !important;
+  color: white !important;
 }
 
-.status-pill {
-  display: inline-block;
-  padding: 6px 14px;
-  border-radius: 999px;
-  font-weight: 600;
-  font-size: 13px;
-}
-
-.status-available {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.status-maintenance {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.text-center {
-  text-align: center !important;
-}
-
-.sala-actions {
-  text-align: center;
-}
-
-.btn-sm {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 6px;
-  font-size: 16px;
-  transition: opacity 0.2s;
-}
-
-.btn-sm:hover {
-  opacity: 0.7;
-}
-
-.text-primary {
-  color: #3b82f6;
-}
-
-.text-danger {
+/* ========== BUTTONS ========== */
+.btn-cancel {
   color: #ef4444;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 4px 12px;
 }
 
-.text-muted {
-  color: var(--text-gray);
+.btn-cancel:hover {
+  color: #dc2626;
+  text-decoration: underline;
 }
 
-.py-4 {
-  padding-top: 2rem;
-  padding-bottom: 2rem;
+/* ========== RESPONSIVE ========== */
+@media (max-width: 1200px) {
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-.d-none {
-  display: none;
-}
-
-.js-empty-row td {
-  background: white;
+@media (max-width: 768px) {
+  .admin-sidebar {
+    display: none;
+  }
+  
+  .stats {
+    grid-template-columns: 1fr;
+  }
 }

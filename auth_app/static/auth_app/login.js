@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const passwordInput = document.getElementById("password");
   const feedback = document.getElementById("loginFeedback");
   const params = new URLSearchParams(window.location.search);
-  const nextUrl = params.get("next") || "/admin/salas/";
+  const nextUrl = params.get("next");
 
   if (window.lucide) {
     window.lucide.createIcons();
@@ -52,8 +52,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
       feedback.textContent = "Login realizado com sucesso. Redirecionando...";
       feedback.className = "alert alert-success";
+      
+      // Usa redirect_url da API ou nextUrl ou default baseado no tipo de usuário
+      const redirectTo = nextUrl || data.redirect_url || (data.is_staff ? "/admin/salas/" : "/minhas-reservas/");
+      
       setTimeout(() => {
-        window.location.href = nextUrl;
+        window.location.href = redirectTo;
       }, 600);
     } catch (error) {
       console.error("Erro ao autenticar", error);

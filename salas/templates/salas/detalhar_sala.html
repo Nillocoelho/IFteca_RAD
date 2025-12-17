@@ -24,12 +24,22 @@
                 <i data-lucide="user-round"></i>
                 <span>{{ student_name|default:"Aluno convidado" }}</span>
             </div>
-            <a class="logout-link" href="{% url 'logout' %}">
-                <i data-lucide="log-out"></i>
-                <span>Sair</span>
-            </a>
+            {% if is_authenticated %}
+                <a class="logout-link" href="{% url 'logout' %}">
+                    <i data-lucide="log-out"></i>
+                    <span>Sair</span>
+                </a>
+            {% else %}
+                <a class="logout-link" href="{% url 'login_page' %}">
+                    <i data-lucide="log-in"></i>
+                    <span>Login</span>
+                </a>
+            {% endif %}
         </div>
     </header>
+
+    <!-- Snackbar Container -->
+    <div id="snackbar" class="snackbar"></div>
 
     <main class="page-shell container-xxl">
         <a href="{% url 'listar_salas' %}" class="back-link">
@@ -101,14 +111,24 @@
                                 <h6 id="slotDateLabel" class="mb-2">Horários disponíveis</h6>
                             </div>
                             <div class="slots-list" id="slotsList">
-                                {% for slot in slots %}
-                                    <div class="slot {% if slot.status != 'disponivel' %}slot-disabled{% endif %}">
-                                        <span>{{ slot.range }}</span>
-                                        {% if slot.status != "disponivel" %}
-                                            <span class="status-tag">Ocupado</span>
-                                        {% endif %}
-                                    </div>
-                                {% endfor %}
+                                <div class="text-center text-muted py-4">
+                                    <i data-lucide="calendar"></i>
+                                    <p class="mb-0 mt-2">Selecione uma data no calendário</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Resumo da Reserva -->
+                            <div class="booking-summary" id="bookingSummary" style="display: none;">
+                                <h6>Resumo da Reserva:</h6>
+                                <div class="summary-content">
+                                    <p><strong>Sala:</strong> <span id="summaryRoomName">{{ sala.nome }}</span></p>
+                                    <p><strong>Data:</strong> <span id="summaryDate">-</span></p>
+                                    <p><strong>Horário:</strong> <span id="summaryTime">-</span></p>
+                                </div>
+                                <button class="btn-confirm-booking" id="btnConfirmBooking">
+                                    <i data-lucide="check"></i>
+                                    <span>Confirmar Reserva</span>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -116,6 +136,14 @@
             </div>
         </div>
     </main>
+
+    <!-- Hidden data for JavaScript -->
+    <script>
+        window.SALA_ID = {{ sala.id }};
+        window.SALA_NOME = "{{ sala.nome }}";
+        window.SALA_LOCALIZACAO = "{{ sala.tipo }}";
+        window.IS_AUTHENTICATED = {{ is_authenticated|yesno:"true,false" }};
+    </script>
 
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="{% static 'salas/detalhar_sala.js' %}"></script>

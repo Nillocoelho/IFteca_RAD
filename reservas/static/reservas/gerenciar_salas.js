@@ -24,15 +24,18 @@ function renderSalaRow(s){
   const extra = equipamentos.length > 2 ? `<span class="text-muted">+${equipamentos.length - 2}</span>` : '';
   const statusText = s.status || s.status_text || "Disponivel";
   const statusPillClass =
-    statusText === "Disponivel" ? "status-pill status-available" : "status-pill status-maintenance";
+    statusText === "Disponivel" ? "status-pill status-available" : 
+    statusText === "Em Manutenção" ? "status-pill status-maintenance" : "status-pill status-available";
+  
+  const andar = s.tipo || s.localizacao || "";
 
   tr.innerHTML = `
-    <td class="fw-semibold sala-nome">${s.nome}</td>
-    <td class="sala-tipo">${s.tipo || ""}</td>
+    <td class="sala-nome">${s.nome}</td>
+    <td class="sala-tipo">${andar}</td>
     <td class="sala-capacidade">${s.capacidade} pessoas</td>
     <td class="sala-status"><span class="${statusPillClass}">${statusText}</span></td>
     <td class="sala-equip"><div class="equipments">${visibleEquip} ${extra}</div></td>
-    <td class="text-end sala-actions">
+    <td class="text-center sala-actions">
       <button class="btn btn-sm btn-edit text-primary me-2" data-id="${s.id}" title="Editar"><i class="bi bi-pencil"></i></button>
       <button class="btn btn-sm btn-delete text-danger" data-id="${s.id}" title="Excluir"><i class="bi bi-trash"></i></button>
     </td>
@@ -61,11 +64,26 @@ document.addEventListener('DOMContentLoaded',()=>{
   loadAndRender();
   const search=document.getElementById('searchInput');if(search){search.addEventListener('input',e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('#salasTableBody tr').forEach(tr=>{if(tr.classList.contains('js-empty-row')) return;const name=tr.querySelector('.sala-nome')?.textContent.toLowerCase()||'';const tipo=tr.querySelector('.sala-tipo')?.textContent.toLowerCase()||'';tr.style.display=(name.includes(q)||tipo.includes(q))? '':'none';});});}
 
+  // Limpar formulário ao clicar em Adicionar Sala
+  const btnAdd=document.getElementById('btnAdd');
+  if(btnAdd){btnAdd.addEventListener('click',()=>{
+    document.getElementById('modalTitle').textContent='Adicionar Nova Sala';
+    document.getElementById('modalNome').value='';
+    document.getElementById('modalCapacidade').value='';
+    document.getElementById('modalTipo').value='';
+    document.getElementById('modalEquip').value='';
+    document.getElementById('modalDesc').value='';
+    document.getElementById('modalSalaId').value='';
+    hideErrors();
+  });}
+
   const modalSubmit=document.getElementById('modalSubmit');
   modalSubmit?.addEventListener('click',async()=>{
     hideErrors();
     const id=document.getElementById('modalSalaId').value;
-    const payload={nome:document.getElementById('modalNome').value,capacidade:document.getElementById('modalCapacidade').value,tipo:document.getElementById('modalTipo').value};
+    const equipRaw=document.getElementById('modalEquip').value;
+    const equipList=equipRaw?equipRaw.split(',').map(e=>e.trim()).filter(Boolean):[];
+    const payload={nome:document.getElementById('modalNome').value,capacidade:document.getElementById('modalCapacidade').value,tipo:document.getElementById('modalTipo').value,equipamentos:equipList,descricao:document.getElementById('modalDesc').value};
     const csrf=getCsrfToken();
     console.info("[salas-ui] submit sala", {id, payload});
     try{

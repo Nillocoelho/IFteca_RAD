@@ -247,17 +247,146 @@ body.detail-page {
     align-items: center;
     font-weight: 700;
     color: var(--gray-600);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.slot:hover:not(.slot-disabled) {
+    border-color: var(--ifpb-green);
+    background: var(--ifpb-green-soft);
+}
+
+.slot.slot-selected {
+    background: var(--ifpb-green);
+    color: white;
+    border-color: var(--ifpb-green);
 }
 
 .slot-disabled {
     background: #f1f3f6;
     color: var(--gray-400);
+    cursor: not-allowed;
 }
 
 .status-tag {
     font-weight: 700;
     color: #c62828;
     font-size: 13px;
+}
+
+/* Resumo da Reserva */
+.booking-summary {
+    margin-top: 20px;
+    background: white;
+    border: 2px solid var(--ifpb-green);
+    border-radius: 14px;
+    padding: 20px;
+}
+
+.booking-summary h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--gray-600);
+    margin: 0 0 16px;
+}
+
+.summary-content {
+    margin-bottom: 16px;
+}
+
+.summary-content p {
+    margin: 8px 0;
+    font-size: 14px;
+    color: var(--gray-600);
+}
+
+.summary-content strong {
+    font-weight: 600;
+}
+
+.btn-confirm-booking {
+    width: 100%;
+    background: var(--ifpb-green);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 20px;
+    font-size: 16px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-confirm-booking:hover {
+    background: var(--ifpb-green-dark);
+    box-shadow: 0 4px 12px rgba(0, 139, 69, 0.3);
+}
+
+.btn-confirm-booking i {
+    width: 20px;
+    height: 20px;
+}
+
+/* Snackbar Styles */
+.snackbar {
+    visibility: hidden;
+    min-width: 250px;
+    margin-left: -125px;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 12px;
+    padding: 16px 24px;
+    position: fixed;
+    z-index: 9999;
+    left: 50%;
+    bottom: 30px;
+    font-size: 15px;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.snackbar.show {
+    visibility: visible;
+    animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+
+.snackbar.success {
+    background-color: var(--ifpb-green);
+    color: white;
+}
+
+.snackbar.error {
+    background-color: #c62828;
+    color: white;
+}
+
+.snackbar.warning {
+    background-color: #ff9800;
+    color: white;
+}
+
+.snackbar.info {
+    background-color: #2196F3;
+    color: white;
+}
+
+@keyframes fadein {
+    from { bottom: 0; opacity: 0; }
+    to { bottom: 30px; opacity: 1; }
+}
+
+@keyframes fadeout {
+    from { bottom: 30px; opacity: 1; }
+    to { bottom: 0; opacity: 0; }
 }
 
 @media (max-width: 992px) {
