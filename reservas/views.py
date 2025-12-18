@@ -46,6 +46,7 @@ def salas_admin(request):
                 "equipamentos": getattr(s, 'equipamentos', []),
                 "status": getattr(s, 'status', 'Disponivel'),
                 "ativo": s.ativo,  # Incluído para futuras funcionalidades
+                "descricao": getattr(s, 'descricao', '') or "",
             }
             for s in salas
         ]
@@ -649,4 +650,3 @@ def api_cancelar_reserva(request, reserva_id):
     logger.info(f"Reserva cancelada: {reserva_id} - Usuário {request.user.username}")
     
     return JsonResponse({"success": True, "message": "Reserva cancelada com sucesso."}, status=200)
-

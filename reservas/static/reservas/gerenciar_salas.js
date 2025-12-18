@@ -113,6 +113,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     document.getElementById('modalEquip').value='';
     document.getElementById('modalDesc').value='';
     document.getElementById('modalSalaId').value='';
+    const submitBtn=document.getElementById('modalSubmit');
+    if(submitBtn) submitBtn.textContent='Adicionar Sala';
     hideErrors();
   });}
 
@@ -140,7 +142,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('salasTableBody')?.addEventListener('click',async(e)=>{
     const edit=e.target.closest('.btn-edit');
     const del=e.target.closest('.btn-delete');
-    if(edit){const id=edit.dataset.id;console.info("[salas-ui] editar sala acionado", {id});const tr=document.querySelector(`tr[data-id="${id}"]`);document.getElementById('modalTitle').textContent='Editar Sala';document.getElementById('modalNome').value=tr.querySelector('.sala-nome').textContent;document.getElementById('modalCapacidade').value=tr.querySelector('.sala-capacidade').textContent.replace(/\D/g,'');document.getElementById('modalTipo').value=tr.dataset.tipo||'';const equipField=document.getElementById('modalEquip');if(equipField){const eq=tr._meta?.equipamentos||((tr.dataset.equipamentos||'').split(',').filter(Boolean));equipField.value=eq.join(', ');}const descField=document.getElementById('modalDesc');if(descField){descField.value=tr._meta?.descricao||tr.dataset.descricao||'';}document.getElementById('modalSalaId').value=id;new bootstrap.Modal(document.getElementById('modalSala')).show();return}
+    if(edit){const id=edit.dataset.id;console.info("[salas-ui] editar sala acionado", {id});const tr=document.querySelector(`tr[data-id="${id}"]`);document.getElementById('modalTitle').textContent='Editar Sala';const submitBtn=document.getElementById('modalSubmit');if(submitBtn) submitBtn.textContent='Salvar alterações';document.getElementById('modalNome').value=tr.querySelector('.sala-nome').textContent;document.getElementById('modalCapacidade').value=tr.querySelector('.sala-capacidade').textContent.replace(/\D/g,'');document.getElementById('modalTipo').value=tr.dataset.tipo||'';const equipField=document.getElementById('modalEquip');if(equipField){const eq=tr._meta?.equipamentos||((tr.dataset.equipamentos||'').split(',').filter(Boolean));equipField.value=eq.join(', ');}const descField=document.getElementById('modalDesc');if(descField){descField.value=tr._meta?.descricao||tr.dataset.descricao||'';}document.getElementById('modalSalaId').value=id;new bootstrap.Modal(document.getElementById('modalSala')).show();return}
     if(del){if(!confirm('Tem certeza que deseja excluir esta sala?')) return;const id=del.dataset.id;console.info("[salas-ui] solicitando exclusão da sala", {id});const csrf=getCsrfToken();try{const res=await fetch(deleteUrl(id),{method:'DELETE',headers:{'X-CSRFToken':csrf}});console.info("[salas-ui] resposta exclusão", {status:res.status});if(!res.ok){const data=await res.json().catch(()=>({}));const msg=data.detail||'Erro ao excluir sala';if(msg.toLowerCase().includes('reserva')){showSnackbar('Não é possível excluir: existem reservas para esta sala.','error');}else{showSnackbar(msg,'error');}return;}showSnackbar('Sala excluída com sucesso!','success');loadAndRender();}catch(err){console.error('[salas-ui] erro de rede ao excluir', err);showSnackbar('Erro de rede ao excluir sala','error');}}
   });
 });
