@@ -324,9 +324,9 @@ def api_update_delete_sala(request, sala_id):
                 status=400
             )
         
-        # Soft delete: marca como inativa ao invés de deletar
-        sala.ativo = False
-        sala.save()
+        # Remove reservas históricas e deleta a sala (somente se não houver ativas)
+        sala.reservas.all().delete()
+        sala.delete()
         return JsonResponse({"message": "Sala removida com sucesso.", "id": sala_id})
 
     try:

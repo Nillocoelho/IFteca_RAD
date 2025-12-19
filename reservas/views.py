@@ -252,9 +252,9 @@ def deletar_sala(request, sala_id):
             status=400,
         )
 
-    # Soft delete: marca como inativa ao invés de deletar
-    sala.ativo = False
-    sala.save()
+    # Remove reservas passadas/canceladas e a própria sala
+    Reserva.objects.filter(sala=sala).delete()
+    sala.delete()
 
     return JsonResponse({"detail": "Sala excluída com sucesso."}, status=200)
 
