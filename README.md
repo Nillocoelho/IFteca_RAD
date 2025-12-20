@@ -15,3 +15,12 @@ Como rodar:
 1. Ativar venv: `.\venv\Scripts\Activate` (ou `.\.venv\Scripts\Activate`)
 2. `python manage.py migrate`
 3. `python manage.py runserver`
+
+Rodar com Docker:
+1. Copie o exemplo de env: `cp .env.example .env` e ajuste `DJANGO_SECRET_KEY`/hosts se quiser.
+2. Build: `docker compose build`
+3. Subir: `docker compose up`
+   - App em http://localhost:8000
+   - LiveReload (se usar) expõe 35729
+   - Banco SQLite persiste no volume `sqlite_data` (montado em `/app/data`)
+4. Rodar comandos Django dentro do container: `docker compose run --rm web python manage.py migrate`
