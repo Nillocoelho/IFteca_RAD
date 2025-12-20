@@ -1,0 +1,19 @@
+services:
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+      - "35729:35729"
+    volumes:
+      - .:/app
+      - sqlite_data:/app/data
+    env_file:
+      - .env
+    environment:
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-True}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,0.0.0.0}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-changeme-in-env}
+
+volumes:
+  sqlite_data:
