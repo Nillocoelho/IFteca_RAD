@@ -131,7 +131,15 @@ document.addEventListener('DOMContentLoaded',()=>{
       let res;
       if(id){res=await fetch(detailUrl(id),{method:'PUT',headers:{'Content-Type':'application/json','X-CSRFToken':csrf},body:JSON.stringify(payload)});}else{res=await fetch(listUrl,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrf},body:JSON.stringify(payload)});}
       console.info("[salas-ui] resposta ao salvar sala", {status:res.status});
-      if(!res.ok){const data=await res.json();console.warn("[salas-ui] erro ao salvar sala", {status:res.status, body:data});showErrors([data.detail||'Erro']);return}
+      if(!res.ok){
+        let data={};
+        try{data=await res.json();}catch(e){data={};}
+        const detail=typeof data.detail==="string"?data.detail:"Erro";
+        console.warn("[salas-ui] erro ao salvar sala", {status:res.status, body:data});
+        if(detail.toLowerCase().includes('reserva')){showSnackbar(detail,'warning');}
+        showErrors([detail]);
+        return
+      }
       // success
       const bsModal=bootstrap.Modal.getInstance(document.getElementById('modalSala'));
       bsModal?.hide();

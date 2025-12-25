@@ -160,6 +160,18 @@ def atualizar_sala(request, sala_id):
     except Sala.DoesNotExist:
         return JsonResponse({"detail": "Sala não encontrada."}, status=404)
 
+    reservas_ativas = Reserva.objects.filter(
+        sala=sala,
+        cancelada=False,
+        inicio__gt=timezone.now(),
+    ).exists()
+
+    if reservas_ativas:
+        return JsonResponse(
+            {"detail": "A sala possui reservas futuras e não pode ser editada."},
+            status=400,
+        )
+
     try:
         data = json.loads(request.body.decode("utf-8"))
     except json.JSONDecodeError:

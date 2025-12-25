@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
@@ -310,15 +311,14 @@ def api_update_delete_sala(request, sala_id):
     except Sala.DoesNotExist:
         return JsonResponse({"errors": ["Sala nao encontrada."]}, status=404)
 
+    reservas_ativas_qs = sala.reservas.filter(
+        cancelada=False,
+        inicio__gte=timezone.now(),
+    )
+
     if request.method == "DELETE":
         # Verifica se há reservas ativas (não canceladas e futuras)
-        from django.utils import timezone
-        reservas_ativas = sala.reservas.filter(
-            cancelada=False,
-            inicio__gte=timezone.now()
-        ).exists()
-        
-        if reservas_ativas:
+        if reservas_ativas_qs.exists():
             return JsonResponse(
                 {"errors": ["Não é possível excluir esta sala pois existem reservas ativas. Aguarde até que todas as reservas sejam concluídas ou canceladas."]},
                 status=400
@@ -328,6 +328,12 @@ def api_update_delete_sala(request, sala_id):
         sala.reservas.all().delete()
         sala.delete()
         return JsonResponse({"message": "Sala removida com sucesso.", "id": sala_id})
+
+    if reservas_ativas_qs.exists():
+        return JsonResponse(
+            {"errors": ["NÇœo Ç¸ possÇðvel editar esta sala pois existem reservas ativas. Aguarde atÇ¸ que todas as reservas sejam concluÇðdas ou canceladas."]},
+            status=400,
+        )
 
     try:
         payload = json.loads(request.body or "{}")
