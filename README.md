@@ -12,11 +12,15 @@ Principais componentes:
 Características
 ---------------
 
-- Autenticação de usuários com telas de login.
-- CRUD completo para salas e reservas.
-- Templates responsivos com JS/CSS para interação no frontend.
-- Suporte a execução via Docker (arquivo `docker-compose.yml`).
-- Conjunto de testes unitários para modelos, views e APIs.
+- **Autenticação e Autorização**: Sistema completo com login/logout, controle de acesso baseado em papéis (admin/estudante)
+- **API REST**: Endpoints com Django REST Framework, Token Authentication e Session Authentication
+- **Arquitetura MVT**: Models, Views e Templates bem estruturados seguindo padrões Django
+- **Paginação**: Implementada com Django Paginator em listagens de salas e reservas (6-15 itens por página)
+- **CRUD Completo**: Gerenciamento de salas e reservas com validações de negócio
+- **Templates Responsivos**: Interface moderna com Bootstrap 5 e JavaScript para interação
+- **Testes Automatizados**: 150+ testes cobrindo models, views, APIs e paginação
+- **Docker**: Suporte completo com docker-compose.yml para ambiente containerizado
+- **Soft Delete**: Salas inativas mantêm histórico de reservas
 
 Tecnologias
 ----------
@@ -76,11 +80,37 @@ docker compose exec web python manage.py migrate
 Testes
 ------
 
-Execute a suíte de testes com:
+Execute a suíte completa de testes (150+ testes):
 
 ```bash
 python manage.py test
 ```
+
+Ou com Docker:
+
+```bash
+docker compose exec web python manage.py test --parallel
+```
+
+Testes específicos:
+
+```bash
+# Testes de paginação
+python manage.py test salas.tests.test_pagination -v 2
+
+# Testes de autenticação
+python manage.py test auth_app.tests.test_auth -v 2
+
+# Testes de models
+python manage.py test salas.tests.test_models -v 2
+```
+
+**Cobertura de Testes:**
+- ✅ Models (validações, constraints, soft delete)
+- ✅ Views (autenticação, autorização, CRUD)
+- ✅ APIs REST (endpoints, serializers)
+- ✅ Paginação (Django Paginator)
+- ✅ Autenticação (login, logout, tokens)
 
 Estrutura do Projeto (resumo)
 ----------------------------

@@ -1,6 +1,7 @@
 import json
 
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -42,6 +43,14 @@ def listar_salas(request):
     if not salas:
         salas = [ {k: v for k, v in sala.items() if k != "descricao"} for sala in _fallback_salas() ]
 
+    # Paginação
+    paginator = Paginator(salas, 6)  # 6 salas por página
+    page_number = request.GET.get('page', 1)
+    try:
+        page_obj = paginator.get_page(page_number)
+    except (EmptyPage, PageNotAnInteger):
+        page_obj = paginator.get_page(1)
+
     student_name = (
         getattr(request.user, "get_full_name", lambda: "")() or getattr(request.user, "username", "") or "Aluno convidado"
     )
@@ -50,7 +59,8 @@ def listar_salas(request):
         request,
         "salas/listar_salas.html",
         {
-            "salas": salas,
+            "salas": page_obj.object_list,
+            "page_obj": page_obj,
             "student_name": student_name,
             "is_authenticated": request.user.is_authenticated,
         },
@@ -195,7 +205,7 @@ def api_lookup_sala(request):
 def gerenciar_salas(request):
     # Lista salas reais e complementa com dados de exibicao (status/equipamentos) para a UI.
     # Admin vê todas as salas (ativas e inativas)
-    salas_qs = Sala.objects.all()
+    salas_qs = Sala.objects.all().order_by('nome')
 
     salas = []
     for sala in salas_qs:

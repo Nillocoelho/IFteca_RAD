@@ -1,6 +1,7 @@
 import json
 import logging
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
@@ -324,18 +325,27 @@ def minhas_reservas(request):
     
     # Reservas anteriores (já concluídas ou canceladas)
     # NOTA: Mesmo salas deletadas (ativo=False) aparecem aqui via ForeignKey
-    reservas_anteriores = Reserva.objects.filter(
+    reservas_anteriores_qs = Reserva.objects.filter(
         usuario=usuario
     ).filter(
         models.Q(fim__lt=agora) | models.Q(cancelada=True)
     ).select_related('sala').order_by('-inicio')
+    
+    # Paginação para reservas anteriores
+    paginator = Paginator(reservas_anteriores_qs, 10)  # 10 reservas por página
+    page_number = request.GET.get('page', 1)
+    try:
+        page_obj = paginator.get_page(page_number)
+    except (EmptyPage, PageNotAnInteger):
+        page_obj = paginator.get_page(1)
     
     # Total de reservas
     total_reservas = Reserva.objects.filter(usuario=usuario).count()
     
     context = {
         'reservas_ativas': reservas_ativas,
-        'reservas_anteriores': reservas_anteriores,
+        'reservas_anteriores': page_obj.object_list,
+        'page_obj': page_obj,
         'total_reservas': total_reservas,
     }
     
@@ -417,9 +427,18 @@ def admin_reservas(request):
             'criada_em': criada_em,
         })
 
+    # Paginação
+    paginator = Paginator(reservas_enriched, 15)  # 15 reservas por página
+    page_number = request.GET.get('page', 1)
+    try:
+        page_obj = paginator.get_page(page_number)
+    except (EmptyPage, PageNotAnInteger):
+        page_obj = paginator.get_page(1)
+
     context = {
         'salas': salas,
-        'reservas': reservas_enriched,
+        'reservas': page_obj.object_list,
+        'page_obj': page_obj,
         'total': total,
         'ativos': ativos,
         'concluidos': concluidos,
