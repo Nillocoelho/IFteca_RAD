@@ -1,3 +1,7 @@
+/* =====================================================
+   GERENCIAR USUÁRIOS - ESTILOS
+   ===================================================== */
+
 :root {
   --ifpb-green: #008B45;
   --ifpb-green-dark: #006837;
@@ -183,17 +187,18 @@ body {
 .content-header h1 {
   font-size: 28px;
   font-weight: 700;
+  margin: 0 0 4px;
   color: var(--text-dark);
-  margin-bottom: 4px;
 }
 
 .content-header .text-muted {
   font-size: 14px;
+  margin: 0;
   color: var(--text-gray);
 }
 
-/* ========== STATS CARDS ========== */
-.stats {
+/* Stats Grid */
+.stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
@@ -201,7 +206,7 @@ body {
 }
 
 .stat-card {
-  background: white;
+  background: #fff;
   border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 20px;
@@ -220,150 +225,249 @@ body {
   color: var(--text-dark);
 }
 
-/* ========== CARD ========== */
-.card {
-  background: white;
+/* Users Card */
+.users-card {
+  background: #fff;
   border: 1px solid var(--border-color);
   border-radius: 12px;
   overflow: hidden;
 }
 
 .card-header {
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
-.card-header h5 {
+.card-header h2 {
   font-size: 16px;
   font-weight: 600;
-  color: var(--text-dark);
   margin: 0;
+  color: var(--text-dark);
 }
 
-.card-body {
-  padding: 0;
-}
-
-/* ========== FILTERS ========== */
-#filterForm {
+.filters {
   display: flex;
-  gap: 8px;
   align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-#filterForm .form-select,
-#filterForm .form-control {
+.search-box {
+  display: flex;
+  align-items: center;
+  background: #f9fafb;
   border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 14px;
-  padding: 6px 12px;
+  border-radius: 8px;
+  padding: 8px 12px;
+  width: 220px;
 }
 
-#filterForm .btn {
-  font-size: 14px;
-  padding: 6px 16px;
-  border-radius: 6px;
+.search-box i {
+  color: var(--text-gray);
+  margin-right: 8px;
 }
 
-/* ========== TABLE ========== */
-.table-responsive {
-  overflow-x: auto;
-}
-
-.table {
+.search-box input {
+  border: none;
+  background: transparent;
+  outline: none;
   width: 100%;
   font-size: 14px;
 }
 
-.table thead {
-  background: #f9fafb;
-  border-bottom: 1px solid var(--border-color);
+.filter-select {
+  padding: 8px 32px 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #fff url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e") no-repeat right 12px center/12px 12px;
+  font-size: 14px;
+  color: var(--text-dark);
+  cursor: pointer;
+  appearance: none;
+  min-width: 140px;
 }
 
-.table thead th {
-  padding: 12px 24px;
-  font-weight: 600;
-  font-size: 12px;
-  text-transform: uppercase;
-  color: var(--text-gray);
-  border: none;
+.filter-select:focus {
+  outline: none;
+  border-color: var(--ifpb-green);
 }
 
-.table tbody td {
-  padding: 16px 24px;
-  border-bottom: 1px solid var(--border-color);
+/* Table */
+.table-container {
+  overflow-x: auto;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.users-table th,
+.users-table td {
+  padding: 14px 16px;
+  text-align: left;
   vertical-align: middle;
 }
 
-.table tbody tr:last-child td {
-  border-bottom: none;
+.users-table th {
+  background: #f9fafb;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border-color);
 }
 
-.table .fw-semibold {
-  font-weight: 600;
+.users-table td {
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 14px;
+}
+
+.users-table tr:hover {
+  background: #f9fafb;
+}
+
+.users-table tr.empty-row:hover {
+  background: transparent;
+}
+
+.user-name {
+  font-weight: 500;
   color: var(--text-dark);
 }
 
-.table .small {
-  font-size: 13px;
+.user-email {
+  color: var(--text-gray);
 }
 
-/* ========== BADGES ========== */
-.badge {
+.user-matricula {
+  font-family: 'Consolas', monospace;
+  font-size: 14px;
+}
+
+/* Badges */
+.badge-tipo {
+  display: inline-block;
   padding: 4px 10px;
-  border-radius: 12px;
+  border-radius: 6px;
   font-size: 12px;
-  font-weight: 600;
-}
-
-.badge.bg-primary {
-  background: #3b82f6 !important;
-}
-
-.badge.bg-secondary {
-  background: #6b7280 !important;
-}
-
-.badge.bg-danger {
-  background: #ef4444 !important;
-}
-
-.badge.bg-success,
-.text-success {
-  background: var(--ifpb-green) !important;
-  color: white !important;
-}
-
-/* ========== BUTTONS ========== */
-.btn-cancel {
-  color: #ef4444;
-  text-decoration: none;
   font-weight: 500;
-  padding: 4px 12px;
 }
 
-.btn-cancel:hover {
-  color: #dc2626;
-  text-decoration: underline;
+.badge-estudante {
+  background: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #90caf9;
 }
 
-.btn-cancel-disabled {
+.badge-professor {
+  background: #fce4ec;
+  color: #c2185b;
+  border: 1px solid #f48fb1;
+}
+
+.badge-admin {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+
+.badge-status {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badge-ativo {
+  background: #d4edda;
+  color: #155724;
+}
+
+.badge-inativo {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.btn-action {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-edit {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.btn-edit:hover {
+  background: #bbdefb;
+}
+
+.btn-toggle {
+  background: #f5f5f5;
+}
+
+.btn-toggle.btn-deactivate {
+  color: var(--ifpb-green);
+}
+
+.btn-toggle.btn-deactivate:hover {
+  background: #e8f5e9;
+}
+
+.btn-toggle.btn-activate {
+  color: var(--text-gray);
+}
+
+.btn-toggle.btn-activate:hover {
+  background: #e9ecef;
+}
+
+.btn-toggle i {
+  font-size: 18px;
+}
+
+/* Botões desabilitados */
+.btn-action-disabled {
+  background: #e5e7eb !important;
   color: #9ca3af !important;
-  text-decoration: none;
-  font-weight: 500;
-  padding: 4px 12px;
   cursor: not-allowed;
 }
 
-.btn-cancel-disabled:hover {
+.btn-action-disabled:hover {
+  background: #e5e7eb !important;
   color: #9ca3af !important;
-  text-decoration: none;
 }
 
-/* ========== PAGINATION ========== */
+/* Pagination */
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
 .pagination {
   display: flex;
   gap: 4px;
@@ -406,9 +510,49 @@ body {
   cursor: not-allowed;
 }
 
-/* ========== RESPONSIVE ========== */
+/* Feedback Alert */
+#feedback {
+  margin: 16px 20px 0;
+  border-radius: 8px;
+}
+
+/* Modal */
+.modal-content {
+  border-radius: 12px;
+  border: none;
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--border-color);
+  padding: 16px 20px;
+}
+
+.modal-title {
+  font-weight: 600;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-footer {
+  border-top: 1px solid var(--border-color);
+  padding: 16px 20px;
+}
+
+.btn-primary {
+  background: var(--ifpb-green);
+  border-color: var(--ifpb-green);
+}
+
+.btn-primary:hover {
+  background: var(--ifpb-green-dark);
+  border-color: var(--ifpb-green-dark);
+}
+
+/* Responsive */
 @media (max-width: 1200px) {
-  .stats {
+  .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
@@ -418,7 +562,29 @@ body {
     display: none;
   }
   
-  .stats {
-    grid-template-columns: 1fr;
+  .admin-main {
+    margin-left: 0;
+    padding: 16px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .card-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filters {
+    flex-direction: column;
+  }
+  
+  .search-box {
+    width: 100%;
+  }
+  
+  .filter-select {
+    width: 100%;
   }
 }

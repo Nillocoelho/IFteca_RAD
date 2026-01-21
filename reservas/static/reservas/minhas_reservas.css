@@ -428,6 +428,49 @@ body.reservas-page {
     margin: 0;
 }
 
+/* ========== PAGINATION ========== */
+.pagination {
+    display: flex;
+    gap: 4px;
+    margin: 0;
+}
+
+.pagination .page-item .page-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 12px;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    background: white;
+    color: var(--gray-600);
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.pagination .page-item .page-link:hover {
+    background: var(--ifpb-green-soft);
+    border-color: var(--ifpb-green);
+    color: var(--ifpb-green);
+}
+
+.pagination .page-item.active .page-link {
+    background: var(--ifpb-green);
+    border-color: var(--ifpb-green);
+    color: white;
+}
+
+.pagination .page-item.disabled .page-link {
+    background: #f9fafb;
+    border-color: var(--gray-200);
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
 /* ========== RESPONSIVE ========== */
 @media (max-width: 768px) {
     .topbar {

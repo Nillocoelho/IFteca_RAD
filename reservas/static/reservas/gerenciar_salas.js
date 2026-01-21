@@ -40,10 +40,11 @@ function showSnackbar(message, type = 'info') {
 }
 
 const API_BASE=(document.body.dataset.apiBase||"/reservas/admin/salas/").replace(/\/+$/,"");
+const IS_ADMIN = document.body.dataset.isAdmin === 'true';
 const listUrl=`${API_BASE}/`;
 const detailUrl=id=>`${API_BASE}/${id}/`;
 const deleteUrl=id=>`${API_BASE}/${id}/delete/`;
-console.info("[salas-ui] API_BASE detectado", {API_BASE, listUrl});
+console.info("[salas-ui] API_BASE detectado", {API_BASE, listUrl, IS_ADMIN});
 
 async function fetchSalas(){
   console.info("[salas-ui] requisitando lista de salas", {url:listUrl});
@@ -68,16 +69,27 @@ function renderSalaRow(s){
   
   const andar = s.tipo || s.localizacao || "";
 
+  // Botões de ação - desabilitados para não-admins
+  let actionsHtml = '';
+  if (IS_ADMIN) {
+    actionsHtml = `
+      <button class="btn btn-sm btn-edit text-primary me-2" data-id="${s.id}" title="Editar"><i class="bi bi-pencil"></i></button>
+      <button class="btn btn-sm btn-delete text-danger" data-id="${s.id}" title="Excluir"><i class="bi bi-trash"></i></button>
+    `;
+  } else {
+    actionsHtml = `
+      <button class="btn btn-sm btn-action-disabled" disabled title="Apenas administradores podem editar"><i class="bi bi-pencil"></i></button>
+      <button class="btn btn-sm btn-action-disabled" disabled title="Apenas administradores podem excluir"><i class="bi bi-trash"></i></button>
+    `;
+  }
+
   tr.innerHTML = `
     <td class="sala-nome">${s.nome}</td>
     <td class="sala-tipo">${andar}</td>
     <td class="sala-capacidade">${s.capacidade} pessoas</td>
     <td class="sala-status"><span class="${statusPillClass}">${statusText}</span></td>
     <td class="sala-equip"><div class="equipments">${visibleEquip} ${extra}</div></td>
-    <td class="text-center sala-actions">
-      <button class="btn btn-sm btn-edit text-primary me-2" data-id="${s.id}" title="Editar"><i class="bi bi-pencil"></i></button>
-      <button class="btn btn-sm btn-delete text-danger" data-id="${s.id}" title="Excluir"><i class="bi bi-trash"></i></button>
-    </td>
+    <td class="text-center sala-actions">${actionsHtml}</td>
   `;
   tr._meta = { equipamentos: equipamentos, descricao: s.descricao || "" };
   tr.dataset.nome = s.nome || "";

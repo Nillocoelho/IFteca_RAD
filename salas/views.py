@@ -44,7 +44,7 @@ def listar_salas(request):
         salas = [ {k: v for k, v in sala.items() if k != "descricao"} for sala in _fallback_salas() ]
 
     # Paginação
-    paginator = Paginator(salas, 6)  # 6 salas por página
+    paginator = Paginator(salas, 8)  # 8 salas por página
     page_number = request.GET.get('page', 1)
     try:
         page_obj = paginator.get_page(page_number)

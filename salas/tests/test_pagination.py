@@ -29,8 +29,8 @@ class PaginationTests(TestCase):
         )
         cls.client = Client()
 
-        # Criar 15 salas para testar paginação (6 por página)
-        for i in range(1, 16):
+        # Criar 20 salas para testar paginação (8 por página)
+        for i in range(1, 21):
             Sala.objects.create(
                 nome=f"Sala {i:02d}",
                 capacidade=20 + i,
@@ -39,7 +39,7 @@ class PaginationTests(TestCase):
             )
 
     def test_listar_salas_primeira_pagina(self):
-        """Testa que a primeira página mostra 6 salas"""
+        """Testa que a primeira página mostra 8 salas"""
         response = self.client.get(reverse("listar_salas"))
         self.assertEqual(response.status_code, 200)
         
@@ -47,8 +47,8 @@ class PaginationTests(TestCase):
         self.assertIn("page_obj", response.context)
         page_obj = response.context["page_obj"]
         
-        # Primeira página deve ter 6 salas
-        self.assertEqual(len(response.context["salas"]), 6)
+        # Primeira página deve ter 8 salas
+        self.assertEqual(len(response.context["salas"]), 8)
         self.assertEqual(page_obj.number, 1)
         self.assertTrue(page_obj.has_next())
         self.assertFalse(page_obj.has_previous())
@@ -60,8 +60,8 @@ class PaginationTests(TestCase):
         
         page_obj = response.context["page_obj"]
         
-        # Segunda página deve ter 6 salas
-        self.assertEqual(len(response.context["salas"]), 6)
+        # Segunda página deve ter 8 salas
+        self.assertEqual(len(response.context["salas"]), 8)
         self.assertEqual(page_obj.number, 2)
         self.assertTrue(page_obj.has_next())
         self.assertTrue(page_obj.has_previous())
@@ -73,14 +73,14 @@ class PaginationTests(TestCase):
         
         page_obj = response.context["page_obj"]
         
-        # Terceira página deve ter 3 salas (15 total / 6 por página = 2 completas + 1 com 3)
-        self.assertEqual(len(response.context["salas"]), 3)
+        # Terceira página deve ter 4 salas (20 total / 8 por página = 2 completas + 1 com 4)
+        self.assertEqual(len(response.context["salas"]), 4)
         self.assertEqual(page_obj.number, 3)
         self.assertFalse(page_obj.has_next())
         self.assertTrue(page_obj.has_previous())
 
     def test_listar_salas_pagina_invalida(self):
-        """Testa que página inválida retorna a primeira página"""
+        """Testa que página inválida retorna a última página"""
         response = self.client.get(reverse("listar_salas") + "?page=999")
         self.assertEqual(response.status_code, 200)
         
@@ -94,9 +94,9 @@ class PaginationTests(TestCase):
         page_obj = response.context["page_obj"]
         
         # Verifica propriedades do paginator
-        self.assertEqual(page_obj.paginator.count, 15)  # Total de salas
+        self.assertEqual(page_obj.paginator.count, 20)  # Total de salas
         self.assertEqual(page_obj.paginator.num_pages, 3)  # Número de páginas
-        self.assertEqual(page_obj.paginator.per_page, 6)  # Itens por página
+        self.assertEqual(page_obj.paginator.per_page, 8)  # Itens por página
 
     def test_pagination_preserva_url_parameters(self):
         """Testa que a paginação funciona com outros parâmetros de URL"""
@@ -108,4 +108,4 @@ class PaginationTests(TestCase):
         
         # A paginação deve considerar apenas salas ativas
         page_obj = response.context["page_obj"]
-        self.assertEqual(page_obj.paginator.count, 15)  # Não conta a inativa
+        self.assertEqual(page_obj.paginator.count, 20)  # Não conta a inativa

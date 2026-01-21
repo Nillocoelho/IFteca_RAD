@@ -271,6 +271,26 @@ body {
   background: var(--ifpb-green-dark);
 }
 
+.btn-add.btn-disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.btn-add.btn-disabled:hover {
+  background: #9ca3af;
+}
+
+/* Botões de ação desabilitados */
+.btn-sm.btn-action-disabled {
+  color: #9ca3af !important;
+  cursor: not-allowed;
+}
+
+.btn-sm.btn-action-disabled:hover {
+  opacity: 1;
+  color: #9ca3af !important;
+}
+
 /* ========== TABLE ========== */
 .table-container {
   overflow-x: auto;
