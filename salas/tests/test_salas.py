@@ -13,11 +13,11 @@ class SalaTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         User = get_user_model()
-        cls.admin = User.objects.create_user(
+        # Usar superuser para ter permissão completa nas operações de admin
+        cls.admin = User.objects.create_superuser(
             username="admin@example.com",
             email="admin@example.com",
             password="password123",
-            is_staff=True,
         )
         cls.client = Client()
 

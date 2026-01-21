@@ -11,11 +11,11 @@ class SalasAdminApiTests(TestCase):
     def setUp(self):
         self.client = Client()
         user_model = get_user_model()
-        self.admin = user_model.objects.create_user(
+        # Usar superuser para ter permissão completa
+        self.admin = user_model.objects.create_superuser(
             username="admin@example.com",
             email="admin@example.com",
             password="password123",
-            is_staff=True,
         )
         self.client.force_login(self.admin)
 
@@ -31,7 +31,8 @@ class SalasAdminApiTests(TestCase):
 
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
-        self.assertEqual(data[0]["descricao"], "Descricao da sala")
+        # A resposta agora é paginada: {"salas": [...], "pagination": {...}}
+        self.assertEqual(data["salas"][0]["descricao"], "Descricao da sala")
 
     def test_update_keeps_existing_description(self):
         sala = Sala.objects.create(
