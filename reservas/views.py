@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 def salas_admin(request):
     """
     Endpoint GET/POST /api/admin/salas/
-    - GET: lista salas
+    - GET: lista salas (paginado, 8 por página)
     - POST: cria nova sala
     """
 
@@ -39,6 +39,15 @@ def salas_admin(request):
         logger.info("salas_admin GET recebido")
         # Admin vê todas as salas, mas filtra apenas as ativas
         salas = Sala.objects.filter(ativo=True).order_by("nome")
+        
+        # Paginação
+        page_number = request.GET.get('page', 1)
+        paginator = Paginator(salas, 8)  # 8 salas por página
+        
+        try:
+            page_obj = paginator.get_page(page_number)
+        except (EmptyPage, PageNotAnInteger):
+            page_obj = paginator.get_page(1)
 
         data = [
             {
@@ -52,10 +61,23 @@ def salas_admin(request):
                 "ativo": s.ativo,  # Incluído para futuras funcionalidades
                 "descricao": getattr(s, 'descricao', '') or "",
             }
-            for s in salas
+            for s in page_obj
         ]
-        logger.info("salas_admin GET retornando %s salas ativas", len(data))
-        return JsonResponse(data, safe=False, status=200)
+        
+        response_data = {
+            "salas": data,
+            "pagination": {
+                "current_page": page_obj.number,
+                "total_pages": paginator.num_pages,
+                "total_items": paginator.count,
+                "has_next": page_obj.has_next(),
+                "has_previous": page_obj.has_previous(),
+            }
+        }
+        
+        logger.info("salas_admin GET retornando página %s de %s (%s salas)", 
+                    page_obj.number, paginator.num_pages, len(data))
+        return JsonResponse(response_data, safe=False, status=200)
 
     # --------------- POST cria ---------------
     if request.method == "POST":
@@ -930,16 +952,9 @@ def admin_dashboard(request):
                 'total': item['total']
             })
     
-    # Se não houver dados suficientes, usar dados exemplo
-    if len(dados_mensais) < 3:
-        dados_mensais = [
-            {'month': 'Jan', 'total': 45},
-            {'month': 'Fev', 'total': 52},
-            {'month': 'Mar', 'total': 48},
-            {'month': 'Abr', 'total': 61},
-            {'month': 'Mai', 'total': 55},
-            {'month': 'Jun', 'total': 67},
-        ]
+    # Se não houver dados, mostrar lista vazia (dados reais)
+    if not dados_mensais:
+        dados_mensais = []
     
     # Taxa de uso por sala (top 5 salas mais usadas)
     uso_por_sala = (
@@ -959,15 +974,7 @@ def admin_dashboard(request):
             'usage': uso_pct
         })
     
-    # Se não houver dados suficientes, usar dados exemplo
-    if len(dados_salas) < 3:
-        dados_salas = [
-            {'name': 'Sala 101', 'usage': 85},
-            {'name': 'Sala 102', 'usage': 72},
-            {'name': 'Sala 103', 'usage': 91},
-            {'name': 'Sala 201', 'usage': 68},
-            {'name': 'Sala 202', 'usage': 78},
-        ]
+    # Dados reais - não usar fallback mockado
     
     # === Alertas ===
     # Reservas sem comparecimento (reservas passadas não canceladas - simplificado)
@@ -997,13 +1004,7 @@ def admin_dashboard(request):
             'usuario': nome,
         })
     
-    # Se não houver próximas reservas, usar exemplo
-    if not proximas_lista:
-        proximas_lista = [
-            {'sala': 'Sala 101', 'horario': '14:00', 'usuario': 'João Silva'},
-            {'sala': 'Sala 203', 'horario': '14:30', 'usuario': 'Maria Santos'},
-            {'sala': 'Sala 105', 'horario': '15:00', 'usuario': 'Pedro Costa'},
-        ]
+    # Dados reais - lista vazia se não houver reservas
     
     # Verificar se é admin
     is_admin = request.user.is_superuser
