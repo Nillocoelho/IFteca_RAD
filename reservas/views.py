@@ -1,11 +1,15 @@
 import json
 import logging
+from datetime import timedelta
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.db import models
+from django.db.models import Count
+from django.db.models.functions import TruncMonth
 
 # Use the canonical Sala model from the `salas` app to avoid duplication
 from salas.models import Sala
@@ -26,7 +30,7 @@ logger = logging.getLogger(__name__)
 def salas_admin(request):
     """
     Endpoint GET/POST /api/admin/salas/
-    - GET: lista salas
+    - GET: lista salas (paginado, 8 por página)
     - POST: cria nova sala
     """
 
@@ -35,6 +39,15 @@ def salas_admin(request):
         logger.info("salas_admin GET recebido")
         # Admin vê todas as salas, mas filtra apenas as ativas
         salas = Sala.objects.filter(ativo=True).order_by("nome")
+        
+        # Paginação
+        page_number = request.GET.get('page', 1)
+        paginator = Paginator(salas, 8)  # 8 salas por página
+        
+        try:
+            page_obj = paginator.get_page(page_number)
+        except (EmptyPage, PageNotAnInteger):
+            page_obj = paginator.get_page(1)
 
         data = [
             {
@@ -48,13 +61,30 @@ def salas_admin(request):
                 "ativo": s.ativo,  # Incluído para futuras funcionalidades
                 "descricao": getattr(s, 'descricao', '') or "",
             }
-            for s in salas
+            for s in page_obj
         ]
-        logger.info("salas_admin GET retornando %s salas ativas", len(data))
-        return JsonResponse(data, safe=False, status=200)
+        
+        response_data = {
+            "salas": data,
+            "pagination": {
+                "current_page": page_obj.number,
+                "total_pages": paginator.num_pages,
+                "total_items": paginator.count,
+                "has_next": page_obj.has_next(),
+                "has_previous": page_obj.has_previous(),
+            }
+        }
+        
+        logger.info("salas_admin GET retornando página %s de %s (%s salas)", 
+                    page_obj.number, paginator.num_pages, len(data))
+        return JsonResponse(response_data, safe=False, status=200)
 
     # --------------- POST cria ---------------
     if request.method == "POST":
+        # Apenas superusuários podem criar salas
+        if not request.user.is_superuser:
+            return JsonResponse({"detail": "Apenas administradores podem criar salas."}, status=403)
+        
         try:
             raw_body = request.body.decode("utf-8")
             logger.info("salas_admin POST recebido com body cru: %s", raw_body)
@@ -155,6 +185,10 @@ def atualizar_sala(request, sala_id):
     if request.method != "PUT":
         return JsonResponse({"detail": "Método não permitido."}, status=405)
 
+    # Apenas superusuários podem editar salas
+    if not request.user.is_superuser:
+        return JsonResponse({"detail": "Apenas administradores podem editar salas."}, status=403)
+
     try:
         sala = Sala.objects.get(id=sala_id)
     except Sala.DoesNotExist:
@@ -246,6 +280,10 @@ def deletar_sala(request, sala_id):
     if request.method != "DELETE":
         return JsonResponse({"detail": "Método não permitido."}, status=405)
 
+    # Apenas superusuários podem excluir salas
+    if not request.user.is_superuser:
+        return JsonResponse({"detail": "Apenas administradores podem excluir salas."}, status=403)
+
     try:
         sala = Sala.objects.get(id=sala_id)
     except Sala.DoesNotExist:
@@ -300,7 +338,9 @@ def salas_publicas(request):
 def gerenciar_salas_ui(request):
     """Renderiza a interface de gerenciamento de salas (mock admin sem login por enquanto)."""
     tipos = Sala.TIPO_CHOICES
-    return render(request, 'reservas/gerenciar_salas.html', {'tipos': tipos})
+    # Apenas superusuários podem editar/remover
+    is_admin = request.user.is_superuser
+    return render(request, 'reservas/gerenciar_salas.html', {'tipos': tipos, 'is_admin': is_admin})
 
 
 @login_required(login_url="/login/")
@@ -324,18 +364,27 @@ def minhas_reservas(request):
     
     # Reservas anteriores (já concluídas ou canceladas)
     # NOTA: Mesmo salas deletadas (ativo=False) aparecem aqui via ForeignKey
-    reservas_anteriores = Reserva.objects.filter(
+    reservas_anteriores_qs = Reserva.objects.filter(
         usuario=usuario
     ).filter(
         models.Q(fim__lt=agora) | models.Q(cancelada=True)
     ).select_related('sala').order_by('-inicio')
+    
+    # Paginação para reservas anteriores
+    paginator = Paginator(reservas_anteriores_qs, 8)  # 8 reservas por página
+    page_number = request.GET.get('page', 1)
+    try:
+        page_obj = paginator.get_page(page_number)
+    except (EmptyPage, PageNotAnInteger):
+        page_obj = paginator.get_page(1)
     
     # Total de reservas
     total_reservas = Reserva.objects.filter(usuario=usuario).count()
     
     context = {
         'reservas_ativas': reservas_ativas,
-        'reservas_anteriores': reservas_anteriores,
+        'reservas_anteriores': page_obj.object_list,
+        'page_obj': page_obj,
         'total_reservas': total_reservas,
     }
     
@@ -417,9 +466,21 @@ def admin_reservas(request):
             'criada_em': criada_em,
         })
 
+    # Paginação
+    paginator = Paginator(reservas_enriched, 8)  # 8 reservas por página
+    page_number = request.GET.get('page', 1)
+    try:
+        page_obj = paginator.get_page(page_number)
+    except (EmptyPage, PageNotAnInteger):
+        page_obj = paginator.get_page(1)
+
+    # Apenas superusuários podem cancelar reservas
+    is_admin = request.user.is_superuser
+    
     context = {
         'salas': salas,
-        'reservas': reservas_enriched,
+        'reservas': page_obj.object_list,
+        'page_obj': page_obj,
         'total': total,
         'ativos': ativos,
         'concluidos': concluidos,
@@ -427,6 +488,7 @@ def admin_reservas(request):
         'filtro_sala': sala_id or '',
         'filtro_data': data_str or '',
         'now': agora,
+        'is_admin': is_admin,
     }
     return render(request, 'reservas/admin_reservas.html', context)
 
@@ -437,6 +499,10 @@ def api_admin_cancel_reserva(request, reserva_id):
     """API para administradores cancelarem qualquer reserva."""
     if request.method != 'POST':
         return JsonResponse({'error': 'Método não permitido.'}, status=405)
+
+    # Apenas superusuários podem cancelar reservas
+    if not request.user.is_superuser:
+        return JsonResponse({'error': 'Apenas administradores podem cancelar reservas.'}, status=403)
 
     try:
         reserva = Reserva.objects.get(id=reserva_id)
@@ -662,3 +728,329 @@ def api_cancelar_reserva(request, reserva_id):
     logger.info(f"Reserva cancelada: {reserva_id} - Usuário {request.user.username}")
     
     return JsonResponse({"success": True, "message": "Reserva cancelada com sucesso."}, status=200)
+
+
+# ============================================
+#  GERENCIAR USUÁRIOS (ADMIN)
+# ============================================
+
+def get_user_type(user):
+    """Determina o tipo do usuário baseado em seus atributos."""
+    if user.is_superuser or user.is_staff:
+        return 'admin'
+    # Verifica se o username parece ser matrícula de professor (SIAPE)
+    if user.username.upper().startswith('SIAPE') or (hasattr(user, 'first_name') and 'Prof' in (user.first_name or '')):
+        return 'professor'
+    return 'estudante'
+
+
+@staff_member_required(login_url='/login/')
+def gerenciar_usuarios(request):
+    """Renderiza a interface administrativa de gerenciamento de usuários."""
+    
+    # Filtros via query params
+    tipo_filter = request.GET.get('tipo', '')
+    status_filter = request.GET.get('status', '')
+    search_query = request.GET.get('q', '')
+    
+    # Busca todos os usuários (exceto o próprio admin logado para evitar auto-desativação acidental)
+    usuarios_qs = User.objects.all().order_by('first_name', 'last_name', 'username')
+    
+    # Aplica filtro de busca
+    if search_query:
+        usuarios_qs = usuarios_qs.filter(
+            models.Q(first_name__icontains=search_query) |
+            models.Q(last_name__icontains=search_query) |
+            models.Q(email__icontains=search_query) |
+            models.Q(username__icontains=search_query)
+        )
+    
+    # Aplica filtro de status
+    if status_filter == 'ativo':
+        usuarios_qs = usuarios_qs.filter(is_active=True)
+    elif status_filter == 'inativo':
+        usuarios_qs = usuarios_qs.filter(is_active=False)
+    
+    # Estatísticas
+    all_users = User.objects.all()
+    total_usuarios = all_users.count()
+    usuarios_ativos = all_users.filter(is_active=True).count()
+    
+    # Conta por tipo (exclui admins da contagem de estudantes/professores)
+    total_estudantes = 0
+    total_professores = 0
+    
+    for u in all_users.filter(is_staff=False, is_superuser=False):
+        if get_user_type(u) == 'professor':
+            total_professores += 1
+        else:
+            total_estudantes += 1
+    
+    # Prepara dados dos usuários
+    usuarios_data = []
+    for u in usuarios_qs:
+        tipo = get_user_type(u)
+        
+        # Aplica filtro de tipo
+        if tipo_filter and tipo != tipo_filter:
+            continue
+        
+        # Conta reservas do usuário
+        reservas_count = Reserva.objects.filter(usuario=u.username).count()
+        
+        # Nome completo ou username
+        nome = f"{u.first_name} {u.last_name}".strip() or u.username
+        
+        # Matrícula (username) ou SIAPE
+        matricula = u.username
+        
+        usuarios_data.append({
+            'id': u.id,
+            'nome': nome,
+            'email': u.email,
+            'matricula': matricula,
+            'tipo': tipo,
+            'tipo_display': {'estudante': 'Estudante', 'professor': 'Professor', 'admin': 'Administrador'}.get(tipo, tipo.title()),
+            'status': 'ativo' if u.is_active else 'inativo',
+            'status_display': 'Ativo' if u.is_active else 'Inativo',
+            'is_active': u.is_active,
+            'reservas_count': reservas_count,
+        })
+    
+    # Paginação
+    paginator = Paginator(usuarios_data, 8)  # 8 usuários por página
+    page_number = request.GET.get('page', 1)
+    try:
+        page_obj = paginator.get_page(page_number)
+    except (EmptyPage, PageNotAnInteger):
+        page_obj = paginator.get_page(1)
+    
+    # Apenas superusuários podem ativar/desativar usuários
+    is_admin = request.user.is_superuser
+    
+    context = {
+        'usuarios': page_obj.object_list,
+        'page_obj': page_obj,
+        'total_usuarios': total_usuarios,
+        'usuarios_ativos': usuarios_ativos,
+        'total_estudantes': total_estudantes,
+        'total_professores': total_professores,
+        'filtro_tipo': tipo_filter,
+        'filtro_status': status_filter,
+        'search_query': search_query,
+        'is_admin': is_admin,
+    }
+    
+    return render(request, 'reservas/gerenciar_usuarios.html', context)
+
+
+@staff_member_required(login_url='/login/')
+@csrf_exempt
+def api_toggle_usuario(request, usuario_id):
+    """API para ativar/desativar um usuário."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método não permitido.'}, status=405)
+    
+    # Apenas superusuários podem alterar status de usuários
+    if not request.user.is_superuser:
+        return JsonResponse({'error': 'Apenas administradores podem alterar status de usuários.'}, status=403)
+    
+    try:
+        usuario = User.objects.get(id=usuario_id)
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'Usuário não encontrado.'}, status=404)
+    
+    # Impede que o admin desative a si mesmo
+    if usuario.id == request.user.id:
+        return JsonResponse({'error': 'Você não pode desativar sua própria conta.'}, status=400)
+    
+    # Impede desativação de superusuários por usuários staff comuns
+    if usuario.is_superuser and not request.user.is_superuser:
+        return JsonResponse({'error': 'Apenas superusuários podem desativar outros superusuários.'}, status=403)
+    
+    # Toggle do status
+    usuario.is_active = not usuario.is_active
+    usuario.save()
+    
+    action = 'ativado' if usuario.is_active else 'desativado'
+    logger.info(f"Usuário {action}: {usuario.username} por {request.user.username}")
+    
+    return JsonResponse({
+        'success': True,
+        'message': f'Usuário {action} com sucesso!',
+        'is_active': usuario.is_active,
+    })
+
+
+# ============================================
+#  DASHBOARD ADMINISTRATIVO
+# ============================================
+
+@staff_member_required(login_url='/login/')
+def admin_dashboard(request):
+    """Renderiza o dashboard administrativo com estatísticas e gráficos."""
+    agora = timezone.now()
+    
+    # === KPIs ===
+    # Total de reservas
+    total_reservas = Reserva.objects.count()
+    
+    # Reservas do mês atual vs mês anterior
+    inicio_mes_atual = agora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    inicio_mes_anterior = (inicio_mes_atual - timedelta(days=1)).replace(day=1)
+    
+    reservas_mes_atual = Reserva.objects.filter(inicio__gte=inicio_mes_atual).count()
+    reservas_mes_anterior = Reserva.objects.filter(
+        inicio__gte=inicio_mes_anterior,
+        inicio__lt=inicio_mes_atual
+    ).count()
+    
+    # Calcular variação percentual
+    if reservas_mes_anterior > 0:
+        variacao_reservas = round(((reservas_mes_atual - reservas_mes_anterior) / reservas_mes_anterior) * 100)
+    else:
+        variacao_reservas = 100 if reservas_mes_atual > 0 else 0
+    
+    # Salas
+    total_salas = Sala.objects.filter(ativo=True).count()
+    salas_disponiveis = Sala.objects.filter(ativo=True, status='Disponivel').count()
+    salas_manutencao = Sala.objects.filter(ativo=True, status='Em Manutenção').count()
+    
+    # Usuários
+    total_usuarios = User.objects.filter(is_active=True).count()
+    total_estudantes = User.objects.filter(is_active=True, is_staff=False, is_superuser=False).count()
+    total_professores = User.objects.filter(is_active=True, is_staff=True, is_superuser=False).count()
+    
+    # Taxa de ocupação (reservas ativas / capacidade total)
+    # Simplificação: porcentagem de horários ocupados nas últimas 4 semanas
+    inicio_periodo = agora - timedelta(days=28)
+    reservas_periodo = Reserva.objects.filter(
+        inicio__gte=inicio_periodo,
+        cancelada=False
+    ).count()
+    # Assumindo 10 horários por dia por sala, 5 dias por semana, 4 semanas
+    capacidade_teorica = total_salas * 10 * 5 * 4 if total_salas > 0 else 1
+    taxa_ocupacao = min(round((reservas_periodo / capacidade_teorica) * 100), 100)
+    
+    # === Dados para gráficos ===
+    # Reservas por mês (últimos 6 meses)
+    seis_meses_atras = agora - timedelta(days=180)
+    reservas_por_mes = (
+        Reserva.objects.filter(inicio__gte=seis_meses_atras)
+        .annotate(mes=TruncMonth('inicio'))
+        .values('mes')
+        .annotate(total=Count('id'))
+        .order_by('mes')
+    )
+    
+    meses_br = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+    dados_mensais = []
+    for item in reservas_por_mes:
+        if item['mes']:
+            dados_mensais.append({
+                'month': meses_br[item['mes'].month - 1],
+                'total': item['total']
+            })
+    
+    # Se não houver dados, mostrar lista vazia (dados reais)
+    if not dados_mensais:
+        dados_mensais = []
+    
+    # Taxa de uso por sala (top 5 salas mais usadas)
+    uso_por_sala = (
+        Reserva.objects.filter(cancelada=False)
+        .values('sala__nome')
+        .annotate(total=Count('id'))
+        .order_by('-total')[:5]
+    )
+    
+    dados_salas = []
+    max_reservas = max([s['total'] for s in uso_por_sala]) if uso_por_sala else 1
+    for item in uso_por_sala:
+        # Converter para porcentagem relativa
+        uso_pct = round((item['total'] / max_reservas) * 100) if max_reservas > 0 else 0
+        dados_salas.append({
+            'name': item['sala__nome'],
+            'usage': uso_pct
+        })
+    
+    # Dados reais - não usar fallback mockado
+    
+    # === Alertas ===
+    # Reservas sem comparecimento (reservas passadas não canceladas - simplificado)
+    reservas_hoje = Reserva.objects.filter(
+        inicio__date=agora.date(),
+        fim__lt=agora,
+        cancelada=False
+    ).count()
+    
+    # === Próximas Reservas ===
+    proximas_reservas = (
+        Reserva.objects.filter(
+            inicio__gte=agora,
+            cancelada=False
+        )
+        .select_related('sala')
+        .order_by('inicio')[:5]
+    )
+    
+    proximas_lista = []
+    for r in proximas_reservas:
+        usuario_obj = User.objects.filter(username=r.usuario).first()
+        nome = usuario_obj.get_full_name() if usuario_obj and usuario_obj.first_name else r.usuario
+        proximas_lista.append({
+            'sala': r.sala.nome,
+            'horario': r.inicio.strftime('%H:%M'),
+            'usuario': nome,
+        })
+    
+    # Dados reais - lista vazia se não houver reservas
+    
+    # Verificar se é admin
+    is_admin = request.user.is_superuser
+    
+    context = {
+        # KPIs
+        'total_reservas': total_reservas,
+        'variacao_reservas': variacao_reservas,
+        'total_salas': total_salas,
+        'salas_disponiveis': salas_disponiveis,
+        'salas_manutencao': salas_manutencao,
+        'total_usuarios': total_usuarios,
+        'total_estudantes': total_estudantes,
+        'total_professores': total_professores,
+        'taxa_ocupacao': taxa_ocupacao,
+        
+        # Gráficos (JSON para JavaScript)
+        'dados_mensais_json': json.dumps(dados_mensais),
+        'dados_salas_json': json.dumps(dados_salas),
+        
+        # Alertas
+        'salas_manutencao_count': salas_manutencao,
+        'reservas_sem_comparecimento': reservas_hoje,
+        
+        # Próximas reservas
+        'proximas_reservas': proximas_lista,
+        
+        # Permissões
+        'is_admin': is_admin,
+    }
+    
+    return render(request, 'reservas/admin_dashboard.html', context)
+
+
+@staff_member_required(login_url='/login/')
+def api_dashboard_data(request):
+    """API para retornar dados atualizados do dashboard (para refresh)."""
+    # Esta API pode ser usada para atualização dinâmica via AJAX
+    agora = timezone.now()
+    
+    total_reservas = Reserva.objects.count()
+    total_salas = Sala.objects.filter(ativo=True).count()
+    total_usuarios = User.objects.filter(is_active=True).count()
+    
+    return JsonResponse({
+        'total_reservas': total_reservas,
+        'total_salas': total_salas,
+        'total_usuarios': total_usuarios,
+    })

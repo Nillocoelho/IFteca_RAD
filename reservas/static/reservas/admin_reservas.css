@@ -208,14 +208,14 @@ body {
 }
 
 .stat-title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--text-gray);
   margin-bottom: 8px;
 }
 
 .stat-value {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 700;
   color: var(--text-dark);
 }
@@ -348,6 +348,65 @@ body {
 .btn-cancel:hover {
   color: #dc2626;
   text-decoration: underline;
+}
+
+.btn-cancel-disabled {
+  color: #9ca3af !important;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 4px 12px;
+  cursor: not-allowed;
+}
+
+.btn-cancel-disabled:hover {
+  color: #9ca3af !important;
+  text-decoration: none;
+}
+
+/* ========== PAGINATION ========== */
+.pagination-container {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pagination {
+  margin: 0;
+  gap: 4px;
+  display: flex;
+}
+
+.pagination .page-item .page-link {
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-dark) !important;
+  padding: 8px 14px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  border-radius: 8px !important;
+  margin: 0 2px !important;
+  transition: all 0.2s !important;
+  background: white !important;
+}
+
+.pagination .page-item .page-link:hover {
+  background: #f3f4f6 !important;
+  border-color: var(--ifpb-green) !important;
+  color: var(--ifpb-green) !important;
+}
+
+.pagination .page-item.active .page-link {
+  background: var(--ifpb-green) !important;
+  border-color: var(--ifpb-green) !important;
+  color: white !important;
+}
+
+.pagination .page-item.disabled .page-link {
+  background: #f9fafb !important;
+  color: #9ca3af !important;
+  cursor: not-allowed !important;
+  border-color: var(--border-color) !important;
 }
 
 /* ========== RESPONSIVE ========== */

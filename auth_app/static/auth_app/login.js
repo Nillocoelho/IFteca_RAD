@@ -45,8 +45,17 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await response.json();
 
       if (!response.ok) {
-        feedback.textContent = data.detail || "Não foi possivel fazer login.";
-        feedback.className = "alert alert-error";
+        // Verifica se é erro de usuário inativo
+        if (data.detail && (data.detail.includes("desativada") || data.detail.includes("inactive") || data.code === "user_inactive")) {
+          feedback.innerHTML = `
+            <strong>⚠️ Conta Desativada</strong><br>
+            Sua conta está desativada. Entre em contato com a administração da biblioteca para reativar seu acesso.
+          `;
+          feedback.className = "alert alert-warning";
+        } else {
+          feedback.textContent = data.detail || "Não foi possivel fazer login.";
+          feedback.className = "alert alert-error";
+        }
         return;
       }
 

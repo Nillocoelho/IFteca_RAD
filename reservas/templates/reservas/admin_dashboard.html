@@ -1,0 +1,286 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dashboard — IFTECA</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'reservas/admin_dashboard.css' %}">
+</head>
+<body data-is-admin="{{ is_admin|yesno:'true,false' }}">
+  <header class="admin-header">
+    <div class="header-brand">
+      <i class="bi bi-building"></i>
+      <div>
+        <div class="brand-title">IFTECA</div>
+        <div class="brand-subtitle">Sistema de Reserva de Salas - IFPB</div>
+      </div>
+    </div>
+    <div class="header-user">
+      <div class="user-info">
+        <i class="bi bi-person-circle"></i>
+        <span>{% if is_admin %}Administrador{% else %}Gestor{% endif %}</span>
+      </div>
+      <span class="admin-badge">{% if is_admin %}Admin{% else %}Staff{% endif %}</span>
+      <a href="{% url 'logout' %}" class="btn-sair">
+        <i class="bi bi-box-arrow-right"></i>
+        <span>Sair</span>
+      </a>
+    </div>
+  </header>
+
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <nav class="sidebar-nav">
+        <a href="{% url 'admin_dashboard' %}" class="nav-item active">
+          <i class="bi bi-grid-1x2"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="{% url 'gerenciar_salas_ui' %}" class="nav-item">
+          <i class="bi bi-door-open"></i>
+          <span>Gerenciar Salas</span>
+        </a>
+        {% if is_admin %}
+        <a href="{% url 'gerenciar_usuarios' %}" class="nav-item">
+          <i class="bi bi-people"></i>
+          <span>Gerenciar Usuários</span>
+        </a>
+        {% endif %}
+        <a href="{% url 'admin_reservas' %}" class="nav-item">
+          <i class="bi bi-calendar-check"></i>
+          <span>Gerenciar Reservas</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+      <div class="content-header">
+        <div>
+          <h1>Dashboard Administrativo</h1>
+          <p class="text-muted">Visão geral do sistema de reservas</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn-generate-report" onclick="generateReport()">
+            <i class="bi bi-file-earmark-pdf"></i>
+            Gerar Relatório
+          </button>
+        </div>
+      </div>
+
+      <div class="content-body">
+        <!-- KPIs Cards -->
+        <div class="kpi-grid">
+          <!-- Total Reservas -->
+          <div class="kpi-card">
+            <div class="kpi-icon blue">
+              <i class="bi bi-calendar-check"></i>
+            </div>
+            <div class="kpi-content">
+              <h3 class="kpi-value">{{ total_reservas }}</h3>
+              <p class="kpi-label">Total de Reservas</p>
+              <span class="kpi-trend {% if variacao_reservas >= 0 %}positive{% else %}negative{% endif %}">
+                <i class="bi {% if variacao_reservas >= 0 %}bi-arrow-up{% else %}bi-arrow-down{% endif %}"></i>
+                {% if variacao_reservas >= 0 %}+{% endif %}{{ variacao_reservas }}% este mês
+              </span>
+            </div>
+          </div>
+
+          <!-- Salas Cadastradas -->
+          <div class="kpi-card">
+            <div class="kpi-icon green">
+              <i class="bi bi-door-open"></i>
+            </div>
+            <div class="kpi-content">
+              <h3 class="kpi-value">{{ total_salas }}</h3>
+              <p class="kpi-label">Salas Cadastradas</p>
+              <span class="kpi-info">
+                <i class="bi bi-check-circle"></i>
+                {{ salas_disponiveis }} disponíveis
+              </span>
+            </div>
+          </div>
+
+          <!-- Usuários Ativos -->
+          <div class="kpi-card">
+            <div class="kpi-icon purple">
+              <i class="bi bi-people"></i>
+            </div>
+            <div class="kpi-content">
+              <h3 class="kpi-value">{{ total_usuarios }}</h3>
+              <p class="kpi-label">Usuários Ativos</p>
+              <span class="kpi-info">
+                <i class="bi bi-mortarboard"></i>
+                {{ total_estudantes }} estudantes
+              </span>
+            </div>
+          </div>
+
+          <!-- Taxa de Ocupação -->
+          <div class="kpi-card">
+            <div class="kpi-icon orange">
+              <i class="bi bi-graph-up"></i>
+            </div>
+            <div class="kpi-content">
+              <h3 class="kpi-value">{{ taxa_ocupacao }}%</h3>
+              <p class="kpi-label">Taxa de Ocupação</p>
+              <div class="progress-bar-container">
+                <div class="progress-bar" style="width: {{ taxa_ocupacao }}%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-grid">
+          <!-- Reservas por Mês -->
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3 class="chart-title">
+                <i class="bi bi-graph-up-arrow"></i>
+                Reservas por Mês
+              </h3>
+            </div>
+            <div class="chart-body">
+              <canvas id="monthlyChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Taxa de Uso por Sala -->
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3 class="chart-title">
+                <i class="bi bi-bar-chart"></i>
+                Taxa de Uso por Sala
+              </h3>
+            </div>
+            <div class="chart-body">
+              <canvas id="roomUsageChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Section -->
+        <div class="bottom-grid">
+          <!-- Ações Rápidas -->
+          <div class="info-card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <i class="bi bi-lightning"></i>
+                Ações Rápidas
+              </h3>
+            </div>
+            <div class="card-body">
+              <div class="quick-actions">
+                <a href="{% url 'gerenciar_salas_ui' %}" class="action-btn">
+                  <i class="bi bi-plus-circle"></i>
+                  Nova Sala
+                </a>
+                <a href="{% url 'admin_reservas' %}" class="action-btn">
+                  <i class="bi bi-calendar-plus"></i>
+                  Ver Reservas
+                </a>
+                {% if is_admin %}
+                <a href="{% url 'gerenciar_usuarios' %}" class="action-btn">
+                  <i class="bi bi-person-plus"></i>
+                  Gerenciar Usuários
+                </a>
+                {% endif %}
+                <button class="action-btn" onclick="generateReport()">
+                  <i class="bi bi-file-pdf"></i>
+                  Exportar PDF
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Alertas -->
+          <div class="info-card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <i class="bi bi-exclamation-triangle"></i>
+                Alertas
+              </h3>
+            </div>
+            <div class="card-body">
+              {% if salas_manutencao_count > 0 or reservas_sem_comparecimento > 0 %}
+              <div class="alerts-list">
+                {% if salas_manutencao_count > 0 %}
+                <div class="alert-item warning">
+                  <i class="bi bi-tools"></i>
+                  <span>{{ salas_manutencao_count }} sala(s) em manutenção</span>
+                </div>
+                {% endif %}
+                {% if reservas_sem_comparecimento > 0 %}
+                <div class="alert-item info">
+                  <i class="bi bi-clock"></i>
+                  <span>{{ reservas_sem_comparecimento }} reserva(s) finalizaram hoje</span>
+                </div>
+                {% endif %}
+              </div>
+              {% else %}
+              <div class="no-alerts">
+                <i class="bi bi-check-circle"></i>
+                <span>Nenhum alerta no momento</span>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Próximas Reservas -->
+          <div class="info-card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <i class="bi bi-clock-history"></i>
+                Próximas Reservas
+              </h3>
+            </div>
+            <div class="card-body">
+              <div class="reservations-list">
+                {% for reserva in proximas_reservas %}
+                <div class="reservation-item">
+                  <div class="reservation-info">
+                    <span class="reservation-room">{{ reserva.sala }}</span>
+                    <span class="reservation-user">{{ reserva.usuario }}</span>
+                  </div>
+                  <span class="reservation-time">{{ reserva.horario }}</span>
+                </div>
+                {% empty %}
+                <div class="no-reservations">
+                  <i class="bi bi-calendar-x"></i>
+                  <span>Nenhuma reserva próxima</span>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    // Dados do servidor
+    const monthlyData = {{ dados_mensais_json|safe }};
+        const roomData = {{ dados_salas_json|safe }};
+        
+        // KPIs para o relatório
+        const kpis = {
+            totalReservas: {{ total_reservas }},
+            totalSalas: {{ total_salas }},
+            totalUsuarios: {{ total_usuarios }},
+            taxaOcupacao: {{ taxa_ocupacao }},
+            salasManutencao: {{ salas_manutencao_count }},
+            reservasHoje: {{ reservas_sem_comparecimento }}
+        };
+    </script>
+    <script src="{% static 'reservas/admin_dashboard.js' %}"></script>
+</body>
+</html>
