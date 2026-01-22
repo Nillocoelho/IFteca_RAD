@@ -14,6 +14,7 @@ from django.db.models.functions import TruncMonth
 # Use the canonical Sala model from the `salas` app to avoid duplication
 from salas.models import Sala
 from .models import Reserva
+from .email_service import enviar_confirmacao, enviar_cancelamento
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import User
 from django.shortcuts import redirect
@@ -519,6 +520,10 @@ def api_admin_cancel_reserva(request, reserva_id):
     reserva.cancelada = True
     reserva.save()
     logger.info(f"Reserva cancelada (admin): {reserva_id} - Admin {request.user.username}")
+    try:
+        enviar_cancelamento(reserva)
+    except Exception as exc:
+        logger.exception("Falha ao enviar email de cancelamento (admin) da reserva %s: %s", reserva.id, exc)
     return JsonResponse({'success': True, 'message': 'Reserva cancelada com sucesso.'}, status=200)
 
 
@@ -684,6 +689,10 @@ def api_criar_reserva(request):
     )
     
     logger.info(f"Reserva criada: {reserva.id} - Sala {sala.nome} - Usuário {request.user.username}")
+    try:
+        enviar_confirmacao(reserva)
+    except Exception as exc:
+        logger.exception("Falha ao enviar email de confirmacao da reserva %s: %s", reserva.id, exc)
     
     return JsonResponse({
         "id": reserva.id,
@@ -726,6 +735,10 @@ def api_cancelar_reserva(request, reserva_id):
     reserva.cancelada = True
     reserva.save()
     logger.info(f"Reserva cancelada: {reserva_id} - Usuário {request.user.username}")
+    try:
+        enviar_cancelamento(reserva)
+    except Exception as exc:
+        logger.exception("Falha ao enviar email de cancelamento da reserva %s: %s", reserva.id, exc)
     
     return JsonResponse({"success": True, "message": "Reserva cancelada com sucesso."}, status=200)
 

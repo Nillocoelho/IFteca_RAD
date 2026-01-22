@@ -174,6 +174,23 @@ LOGGING = {
     },
 }
 
+# --------------------------
+# EMAIL (Gmail via SMTP)
+# --------------------------
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.getenv("SMTP_PORT", "587"))
+EMAIL_USE_TLS = _env_bool(os.getenv("EMAIL_USE_TLS", "true"), True)
+EMAIL_HOST_USER = os.getenv("SMTP_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("SMTP_PASS", "")
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER or "noreply@ifteca.local"
+
+# Destino padrao para evitar spam durante o projeto academico
+RESERVA_EMAIL_DESTINO = os.getenv(
+    "RESERVA_EMAIL_DESTINO",
+    "coelho.danillo@academico.ifpb.edu.br",
+)
+
 # ------------------------------------------------------------------
 # Workaround para bug do Django 5.1 em Python 3.14 com copy(Context)
 # ------------------------------------------------------------------
