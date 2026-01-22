@@ -839,6 +839,7 @@ def gerenciar_usuarios(request):
         'filtro_status': status_filter,
         'search_query': search_query,
         'is_admin': is_admin,
+        'current_user_id': request.user.id,
     }
     
     return render(request, 'reservas/gerenciar_usuarios.html', context)
@@ -880,6 +881,85 @@ def api_toggle_usuario(request, usuario_id):
         'message': f'Usuário {action} com sucesso!',
         'is_active': usuario.is_active,
     })
+
+
+@staff_member_required(login_url='/login/')
+@csrf_exempt
+def api_criar_usuario(request):
+    """API para criar um novo usuário (admin/staff)."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método não permitido.'}, status=405)
+    
+    # Apenas superusuários podem criar usuários
+    if not request.user.is_superuser:
+        return JsonResponse({'error': 'Apenas administradores podem criar usuários.'}, status=403)
+    
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'JSON inválido.'}, status=400)
+    
+    # Validar campos obrigatórios
+    required_fields = ['first_name', 'last_name', 'email', 'password', 'tipo']
+    missing = [f for f in required_fields if not data.get(f)]
+    if missing:
+        return JsonResponse({'error': f'Campos obrigatórios: {", ".join(missing)}'}, status=400)
+    
+    email = data['email'].strip().lower()
+    first_name = data['first_name'].strip()
+    last_name = data['last_name'].strip()
+    password = data['password']
+    tipo = data['tipo']
+    
+    # Validar email
+    if '@' not in email:
+        return JsonResponse({'error': 'E-mail inválido.'}, status=400)
+    
+    # Verificar se email já existe
+    if User.objects.filter(email=email).exists():
+        return JsonResponse({'error': 'Este e-mail já está cadastrado.'}, status=400)
+    
+    # Verificar se username (email) já existe
+    if User.objects.filter(username=email).exists():
+        return JsonResponse({'error': 'Este e-mail já está cadastrado.'}, status=400)
+    
+    # Validar senha
+    if len(password) < 6:
+        return JsonResponse({'error': 'A senha deve ter no mínimo 6 caracteres.'}, status=400)
+    
+    # Validar tipo
+    if tipo not in ['staff', 'admin']:
+        return JsonResponse({'error': 'Tipo de usuário inválido.'}, status=400)
+    
+    # Criar usuário
+    try:
+        user = User.objects.create_user(
+            username=email,
+            email=email,
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
+            is_active=True,
+            is_staff=(tipo in ['staff', 'admin']),
+            is_superuser=(tipo == 'admin'),
+        )
+        
+        logger.info(f"Usuário criado: {email} (tipo={tipo}) por {request.user.username}")
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Usuário {first_name} {last_name} criado com sucesso!',
+            'user': {
+                'id': user.id,
+                'nome': user.get_full_name(),
+                'email': user.email,
+                'tipo': 'admin' if user.is_superuser else 'staff',
+            }
+        }, status=201)
+        
+    except Exception as e:
+        logger.error(f"Erro ao criar usuário: {str(e)}")
+        return JsonResponse({'error': 'Erro ao criar usuário. Tente novamente.'}, status=500)
 
 
 # ============================================

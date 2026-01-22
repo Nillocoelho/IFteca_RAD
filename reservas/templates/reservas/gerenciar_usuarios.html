@@ -61,6 +61,12 @@
           <h1>Gerenciar Usuários</h1>
           <p class="text-muted">Visualize e gerencie os usuários do sistema</p>
         </div>
+        {% if is_admin %}
+        <button type="button" class="btn btn-success btn-add-user" data-bs-toggle="modal" data-bs-target="#modalCriarUsuario">
+          <i class="bi bi-person-plus"></i>
+          <span>Adicionar Gestor</span>
+        </button>
+        {% endif %}
       </div>
 
       <div class="content-body">
@@ -141,13 +147,17 @@
                   <td class="user-reservas">{{ usuario.reservas_count }}</td>
                   <td class="text-end">
                     <div class="action-buttons">
-                      {% if is_admin %}
+                      {% if is_admin and usuario.id != current_user_id %}
                       <button class="btn-action btn-toggle {% if usuario.is_active %}btn-deactivate{% else %}btn-activate{% endif %}" 
                               title="{% if usuario.is_active %}Desativar usuário{% else %}Ativar usuário{% endif %}"
                               data-id="{{ usuario.id }}"
                               data-active="{{ usuario.is_active|yesno:'true,false' }}">
                         <i class="bi {% if usuario.is_active %}bi-toggle-on{% else %}bi-toggle-off{% endif %}"></i>
                       </button>
+                      {% elif usuario.id == current_user_id %}
+                      <span class="text-muted" title="Você não pode desativar a si mesmo">
+                        <i class="bi bi-person-check"></i> Você
+                      </span>
                       {% else %}
                       <button class="btn-action btn-toggle btn-action-disabled" 
                               title="Apenas administradores podem alterar status de usuários"
@@ -232,6 +242,66 @@
       </div>
     </div>
   </div>
+
+  <!-- Modal de Criar Usuário -->
+  {% if is_admin %}
+  <div class="modal fade" id="modalCriarUsuario" tabindex="-1" aria-labelledby="modalCriarUsuarioLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title" id="modalCriarUsuarioLabel">
+            <i class="bi bi-person-plus me-2"></i>Adicionar Novo Gestor
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <form id="formCriarUsuario">
+          <div class="modal-body">
+            <div id="criarUsuarioFeedback" class="alert d-none" role="alert"></div>
+            
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label for="novoNome" class="form-label">Nome <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="novoNome" name="first_name" required>
+              </div>
+              <div class="col-md-6">
+                <label for="novoSobrenome" class="form-label">Sobrenome <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="novoSobrenome" name="last_name" required>
+              </div>
+              <div class="col-12">
+                <label for="novoEmail" class="form-label">E-mail <span class="text-danger">*</span></label>
+                <input type="email" class="form-control" id="novoEmail" name="email" placeholder="usuario@ifpb.edu.br" required>
+                <div class="form-text">Este e-mail sera usado para login.</div>
+              </div>
+              <div class="col-12">
+                <label for="novoSenha" class="form-label">Senha <span class="text-danger">*</span></label>
+                <input type="password" class="form-control" id="novoSenha" name="password" minlength="6" required>
+                <div class="form-text">Minimo de 6 caracteres.</div>
+              </div>
+              <div class="col-12">
+                <label for="novoTipo" class="form-label">Tipo de Usuario <span class="text-danger">*</span></label>
+                <select class="form-select" id="novoTipo" name="tipo" required>
+                  <option value="">Selecione...</option>
+                  <option value="staff">Gestor (Staff)</option>
+                  <option value="admin">Administrador</option>
+                </select>
+                <div class="form-text">
+                  <strong>Gestor:</strong> Pode visualizar dados, mas nao editar.<br>
+                  <strong>Administrador:</strong> Acesso total ao sistema.
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-success" id="btnCriarUsuario">
+              <i class="bi bi-check-lg me-1"></i>Criar Usuario
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{% static 'reservas/gerenciar_usuarios.js' %}"></script>
