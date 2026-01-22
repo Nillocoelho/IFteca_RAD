@@ -17,6 +17,7 @@ urlpatterns = [
     # Gerenciar Usuários (Admin)
     path("admin/usuarios/", views.gerenciar_usuarios, name="gerenciar_usuarios"),
     path("admin/usuarios/<int:usuario_id>/toggle/", views.api_toggle_usuario, name="api_toggle_usuario"),
+    path("admin/usuarios/criar/", views.api_criar_usuario, name="api_criar_usuario"),
 
     # Estudantes
     path("minhas-reservas/", views.minhas_reservas, name="minhas_reservas"),

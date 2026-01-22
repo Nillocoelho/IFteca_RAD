@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Script para popular o banco de dados com dados fictícios usando Faker.
 Cria salas, usuários e reservas para teste do dashboard.
@@ -17,11 +18,11 @@ from reservas.models import Reserva
 fake = Faker('pt_BR')
 
 print("=" * 60)
-print("🚀 POPULANDO BANCO DE DADOS COM FAKER")
+print("POPULANDO BANCO DE DADOS COM FAKER")
 print("=" * 60)
 
 # ============================================
-# CONFIGURAÇÕES
+# CONFIGURACOES
 # ============================================
 NUM_SALAS = 15
 NUM_ESTUDANTES = 30
@@ -31,18 +32,19 @@ NUM_RESERVAS = 200
 # ============================================
 # CRIAR SALAS
 # ============================================
-print("\n📦 Criando Salas...")
+print("\nCriando Salas...")
 
-tipos_sala = ['Estudo em Grupo', 'Estudo Individual', 'Reunião', 'Laboratório']
-status_sala = ['Disponivel', 'Disponivel', 'Disponivel', 'Em Manutenção']  # Mais disponíveis
-localizacoes = ['Bloco A', 'Bloco B', 'Bloco C', 'Biblioteca', 'Térreo', 'Anexo']
-equipamentos = [
-    'Projetor, Ar-condicionado',
-    'Computadores, Ar-condicionado',
-    'Quadro branco, Projetor',
-    'TV, Ar-condicionado, Webcam',
-    'Lousa digital, Projetor',
-    'Computadores, Projetor, Ar-condicionado',
+# Usar strings ASCII para evitar problemas de encoding
+tipos_sala = ['Coletiva', 'Auditorio']
+status_sala = ['Disponivel', 'Disponivel', 'Disponivel', 'Em Manutencao']  # Mais disponiveis
+localizacoes = ['Bloco A', 'Bloco B', 'Bloco C', 'Biblioteca', 'Terreo', 'Anexo']
+equipamentos_opcoes = [
+    ['Projetor', 'Ar condicionado'],
+    ['Computadores', 'Ar condicionado'],
+    ['Quadro branco', 'Projetor'],
+    ['TV', 'Ar condicionado', 'Webcam'],
+    ['Lousa digital', 'Projetor'],
+    ['Computadores', 'Projetor', 'Ar condicionado'],
 ]
 
 salas_criadas = 0
@@ -60,7 +62,7 @@ for i in range(NUM_SALAS):
         capacidade=random.choice([4, 6, 8, 10, 12, 15, 20]),
         status=random.choice(status_sala),
         localizacao=random.choice(localizacoes),
-        equipamentos=random.choice(equipamentos),
+        equipamentos=random.choice(equipamentos_opcoes),
         descricao=fake.sentence(nb_words=10),
         ativo=True
     )

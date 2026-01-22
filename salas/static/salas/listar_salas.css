@@ -265,6 +265,76 @@ body.salas-page {
     margin: 18px 0 6px;
 }
 
+/* Estilo para paginação do Django - consistente com admin */
+.pagination-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin: 32px 0 16px;
+}
+
+.pagination-container .pagination {
+    display: flex;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pagination-container .page-item {
+    margin: 0;
+}
+
+.pagination-container .page-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 14px;
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
+    background: white;
+    color: var(--gray-600);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s;
+}
+
+.pagination-container .page-link:hover {
+    background: var(--ifpb-green-soft);
+    border-color: var(--ifpb-green);
+    color: var(--ifpb-green);
+    box-shadow: 0 6px 16px rgba(0, 139, 69, 0.12);
+}
+
+.pagination-container .page-item.active .page-link {
+    background: var(--ifpb-green);
+    border-color: var(--ifpb-green);
+    color: white;
+    box-shadow: 0 6px 16px rgba(0, 139, 69, 0.25);
+    cursor: default;
+}
+
+.pagination-container .page-item.disabled .page-link {
+    background: #f9fafb;
+    border-color: var(--gray-200);
+    color: #9ca3af;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.pagination-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    margin: 18px 0 6px;
+}
+
 .pagination-row .page-link {
     display: flex;
     align-items: center;

@@ -164,6 +164,95 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ========================
+  // CRIAR USUÁRIO
+  // ========================
+  const formCriarUsuario = document.getElementById('formCriarUsuario');
+  const criarUsuarioFeedback = document.getElementById('criarUsuarioFeedback');
+  
+  if (formCriarUsuario) {
+    formCriarUsuario.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const btnSubmit = document.getElementById('btnCriarUsuario');
+      const originalText = btnSubmit.innerHTML;
+      
+      // Coletar dados do formulário
+      const data = {
+        first_name: document.getElementById('novoNome').value.trim(),
+        last_name: document.getElementById('novoSobrenome').value.trim(),
+        email: document.getElementById('novoEmail').value.trim(),
+        password: document.getElementById('novoSenha').value,
+        tipo: document.getElementById('novoTipo').value,
+      };
+      
+      // Validação básica
+      if (!data.first_name || !data.last_name || !data.email || !data.password || !data.tipo) {
+        showModalFeedback('Preencha todos os campos obrigatórios.', 'danger');
+        return;
+      }
+      
+      if (data.password.length < 6) {
+        showModalFeedback('A senha deve ter no mínimo 6 caracteres.', 'danger');
+        return;
+      }
+      
+      // Desabilitar botão
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Criando...';
+      
+      try {
+        const response = await fetch('/reservas/admin/usuarios/criar/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken(),
+          },
+          body: JSON.stringify(data),
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+          showModalFeedback(result.message, 'success');
+          
+          // Limpar formulário
+          formCriarUsuario.reset();
+          
+          // Recarregar página após 1.5s para mostrar novo usuário
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        } else {
+          showModalFeedback(result.error || 'Erro ao criar usuário.', 'danger');
+        }
+      } catch (error) {
+        console.error('Erro:', error);
+        showModalFeedback('Erro de conexão. Tente novamente.', 'danger');
+      } finally {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = originalText;
+      }
+    });
+    
+    // Limpar feedback ao abrir modal
+    const modalCriarUsuario = document.getElementById('modalCriarUsuario');
+    if (modalCriarUsuario) {
+      modalCriarUsuario.addEventListener('show.bs.modal', () => {
+        formCriarUsuario.reset();
+        criarUsuarioFeedback.classList.add('d-none');
+      });
+    }
+  }
+  
+  function showModalFeedback(message, type) {
+    if (criarUsuarioFeedback) {
+      criarUsuarioFeedback.textContent = message;
+      criarUsuarioFeedback.className = `alert alert-${type}`;
+      criarUsuarioFeedback.classList.remove('d-none');
+    }
+  }
+
+  // ========================
   // CSRF Token
   // ========================
   function getCSRFToken() {
