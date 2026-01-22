@@ -35,16 +35,16 @@ NUM_RESERVAS = 200
 print("\nCriando Salas...")
 
 # Usar strings ASCII para evitar problemas de encoding
-tipos_sala = ['Estudo em Grupo', 'Estudo Individual', 'Reuniao', 'Laboratorio']
+tipos_sala = ['Coletiva', 'Auditorio']
 status_sala = ['Disponivel', 'Disponivel', 'Disponivel', 'Em Manutencao']  # Mais disponiveis
 localizacoes = ['Bloco A', 'Bloco B', 'Bloco C', 'Biblioteca', 'Terreo', 'Anexo']
-equipamentos = [
-    'Projetor, Ar-condicionado',
-    'Computadores, Ar-condicionado',
-    'Quadro branco, Projetor',
-    'TV, Ar-condicionado, Webcam',
-    'Lousa digital, Projetor',
-    'Computadores, Projetor, Ar-condicionado',
+equipamentos_opcoes = [
+    ['Projetor', 'Ar condicionado'],
+    ['Computadores', 'Ar condicionado'],
+    ['Quadro branco', 'Projetor'],
+    ['TV', 'Ar condicionado', 'Webcam'],
+    ['Lousa digital', 'Projetor'],
+    ['Computadores', 'Projetor', 'Ar condicionado'],
 ]
 
 salas_criadas = 0
@@ -62,7 +62,7 @@ for i in range(NUM_SALAS):
         capacidade=random.choice([4, 6, 8, 10, 12, 15, 20]),
         status=random.choice(status_sala),
         localizacao=random.choice(localizacoes),
-        equipamentos=random.choice(equipamentos),
+        equipamentos=random.choice(equipamentos_opcoes),
         descricao=fake.sentence(nb_words=10),
         ativo=True
     )

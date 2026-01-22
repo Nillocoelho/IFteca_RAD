@@ -26,8 +26,8 @@ class LoginView(APIView):
 
         # Determina para onde redirecionar baseado no tipo de usuário
         if user.is_staff or user.is_superuser:
-            # Admins vão para gerenciar salas
-            redirect_url = reverse("gerenciar_salas_ui")
+            # Admins vão para o dashboard
+            redirect_url = reverse("admin_dashboard")
         else:
             # Estudantes vão para minhas reservas
             redirect_url = reverse("minhas_reservas")
