@@ -302,11 +302,10 @@ def deletar_sala(request, sala_id):
             status=400,
         )
 
-    # Remove reservas passadas/canceladas e a própria sala
-    Reserva.objects.filter(sala=sala).delete()
-    sala.delete()
-
-    return JsonResponse({"detail": "Sala excluída com sucesso."}, status=200)
+    # Soft delete: mantém histórico de reservas e libera nome para novas salas
+    sala.ativo = False
+    sala.save(update_fields=["ativo"])
+    return JsonResponse({"detail": "Sala desativada com sucesso."}, status=200)
 
 
 # ============================================
@@ -334,7 +333,7 @@ def salas_publicas(request):
     return JsonResponse(data, safe=False, status=200)
 
 
-@login_required(login_url="/login/")
+@staff_member_required(login_url='/login/')
 def gerenciar_salas_ui(request):
     """Renderiza a interface de gerenciamento de salas (mock admin sem login por enquanto)."""
     tipos = Sala.TIPO_CHOICES
@@ -1021,7 +1020,7 @@ def admin_dashboard(request):
     # Salas
     total_salas = Sala.objects.filter(ativo=True).count()
     salas_disponiveis = Sala.objects.filter(ativo=True, status='Disponivel').count()
-    salas_manutencao = Sala.objects.filter(ativo=True, status='Em Manutenção').count()
+    salas_manutencao = Sala.objects.filter(ativo=True, status='Em Manutencao').count()
     
     # Usuários
     total_usuarios = User.objects.filter(is_active=True).count()

@@ -15,10 +15,10 @@ Características
 - **Autenticação e Autorização**: Sistema completo com login/logout, controle de acesso baseado em papéis (admin/estudante)
 - **API REST**: Endpoints com Django REST Framework, Token Authentication e Session Authentication
 - **Arquitetura MVT**: Models, Views e Templates bem estruturados seguindo padrões Django
-- **Paginação**: Implementada com Django Paginator em listagens de salas e reservas (6-15 itens por página)
+- **Paginação**: Implementada com Django Paginator em listagens de salas e reservas (8 itens por página)
 - **CRUD Completo**: Gerenciamento de salas e reservas com validações de negócio
 - **Templates Responsivos**: Interface moderna com Bootstrap 5 e JavaScript para interação
-- **Testes Automatizados**: 150+ testes cobrindo models, views, APIs e paginação
+- **Testes Automatizados**: 169 testes cobrindo models, views, APIs e paginação
 - **Docker**: Suporte completo com docker-compose.yml para ambiente containerizado
 - **Soft Delete**: Salas inativas mantêm histórico de reservas
 
@@ -80,7 +80,7 @@ docker compose exec web python manage.py migrate
 Testes
 ------
 
-Execute a suíte completa de testes (150+ testes):
+Execute a suíte completa de testes (169 testes):
 
 ```bash
 python manage.py test

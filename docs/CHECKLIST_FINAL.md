@@ -87,21 +87,21 @@
 
 **1. Listar Salas** ([`salas/views.py`](salas/views.py#L36-L43))
 ```python
-paginator = Paginator(salas, 6)  # 6 salas por página
+paginator = Paginator(salas, 8)  # 8 salas por página
 page_number = request.GET.get('page', 1)
 page_obj = paginator.get_page(page_number)
 ```
 
 **2. Minhas Reservas** ([`reservas/views.py`](reservas/views.py#L328-L335))
 ```python
-paginator = Paginator(reservas_anteriores_qs, 10)  # 10 por página
+paginator = Paginator(reservas_anteriores_qs, 8)  # 8 por página
 page_number = request.GET.get('page', 1)
 page_obj = paginator.get_page(page_number)
 ```
 
 **3. Admin Reservas** ([`reservas/views.py`](reservas/views.py#L414-L421))
 ```python
-paginator = Paginator(reservas_enriched, 15)  # 15 por página
+paginator = Paginator(reservas_enriched, 8)  # 8 por página
 page_number = request.GET.get('page', 1)
 page_obj = paginator.get_page(page_number)
 ```
@@ -245,7 +245,7 @@ def _is_admin(user):
 
 ### 7. ✅ **Testes Automatizados**
 
-**STATUS: 100% COMPLETO - 150 TESTES**
+**STATUS: 100% COMPLETO - 169 TESTES**
 
 #### Distribuição de Testes
 
@@ -290,12 +290,12 @@ def _is_admin(user):
 docker-compose exec web python manage.py test --parallel
 
 # Resultado
-Found 150 test(s).
-Ran 150 tests in 0.868s
+Found 169 test(s).
+Ran 169 tests in 6.940s
 OK
 ```
 
-**✅ 150/150 TESTES PASSANDO**
+**✅ 169/169 TESTES PASSANDO**
 
 ---
 
@@ -309,7 +309,7 @@ OK
 | 4 | Autenticação | ✅ **100%** | Token + Session auth |
 | 5 | Autorização | ✅ **100%** | Roles admin/estudante |
 | 6 | API REST (DRF) | ✅ **100%** | 12 endpoints REST |
-| 7 | Testes Automatizados | ✅ **100%** | 150 testes, 100% passing |
+| 7 | Testes Automatizados | ✅ **100%** | 169 testes, 100% passing |
 
 ---
 
@@ -323,7 +323,7 @@ OK
 - ✅ Documentação detalhada em [`docs/PAGINACAO.md`](docs/PAGINACAO.md)
 
 ### 2. **Cobertura de Testes**
-- ✅ 150 testes automatizados
+- ✅ 169 testes automatizados
 - ✅ 100% dos testes passando
 - ✅ Cobre todos os requisitos
 - ✅ Testes paralelos para performance
@@ -394,7 +394,7 @@ docker-compose exec web python manage.py test --parallel
 
 O projeto está 100% pronto para apresentação final, com:
 - Paginação completa usando Django Paginator conforme ensinado
-- 150 testes automatizados (100% passando)
+- 169 testes automatizados (100% passando)
 - Documentação completa
 - Código profissional e bem estruturado
 

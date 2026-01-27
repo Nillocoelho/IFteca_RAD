@@ -380,7 +380,8 @@ class SalaAPITests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertFalse(Sala.objects.filter(id=sala.id).exists())
+        sala.refresh_from_db()
+        self.assertFalse(sala.ativo)
 
     def test_deletar_sala_sem_autenticacao(self):
         """Testa que deletar sala sem autenticação é negado"""
@@ -598,4 +599,5 @@ class SalaAPITests(TestCase):
         self.assertEqual(response.status_code, 200)
         
         # Verificar que foi deletada
-        self.assertFalse(Sala.objects.filter(id=sala.id).exists())
+        sala.refresh_from_db()
+        self.assertFalse(sala.ativo)

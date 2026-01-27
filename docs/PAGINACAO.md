@@ -9,14 +9,14 @@ Este documento descreve a implementação de paginação usando o `Paginator` do
 ### 1. **Listagem de Salas** (`listar_salas`)
 - **Arquivo**: [salas/views.py](salas/views.py)
 - **URL**: `/salas/`
-- **Itens por página**: 6 salas
+- **Itens por página**: 8 salas
 - **Usuários**: Todos (pública)
 
 **Código:**
 ```python
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
-paginator = Paginator(salas, 6)  # 6 salas por página
+paginator = Paginator(salas, 8)  # 8 salas por página
 page_number = request.GET.get('page', 1)
 try:
     page_obj = paginator.get_page(page_number)
@@ -27,13 +27,13 @@ except (EmptyPage, PageNotAnInteger):
 ### 2. **Minhas Reservas** (`minhas_reservas`)
 - **Arquivo**: [reservas/views.py](reservas/views.py)
 - **URL**: `/reservas/minhas-reservas/`
-- **Itens por página**: 10 reservas anteriores
+- **Itens por página**: 8 reservas anteriores
 - **Usuários**: Estudantes autenticados
 - **Observação**: Reservas ativas não são paginadas (sempre visíveis)
 
 **Código:**
 ```python
-paginator = Paginator(reservas_anteriores_qs, 10)  # 10 reservas por página
+paginator = Paginator(reservas_anteriores_qs, 8)  # 8 reservas por página
 page_number = request.GET.get('page', 1)
 try:
     page_obj = paginator.get_page(page_number)
@@ -44,13 +44,13 @@ except (EmptyPage, PageNotAnInteger):
 ### 3. **Gerenciar Reservas Admin** (`admin_reservas`)
 - **Arquivo**: [reservas/views.py](reservas/views.py)
 - **URL**: `/reservas/admin/reserva/`
-- **Itens por página**: 15 reservas
+- **Itens por página**: 8 reservas
 - **Usuários**: Administradores
 - **Observação**: Preserva filtros de sala e data na paginação
 
 **Código:**
 ```python
-paginator = Paginator(reservas_enriched, 15)  # 15 reservas por página
+paginator = Paginator(reservas_enriched, 8)  # 8 reservas por página
 page_number = request.GET.get('page', 1)
 try:
     page_obj = paginator.get_page(page_number)
@@ -135,7 +135,7 @@ Todos os templates usam o mesmo padrão de paginação Bootstrap 5:
 ### Casos de Teste
 
 1. **`test_listar_salas_primeira_pagina`**
-   - Verifica que a primeira página mostra 6 salas
+   - Verifica que a primeira página mostra 8 salas
    - Confirma que `has_next()` é True
    - Confirma que `has_previous()` é False
 
@@ -165,14 +165,14 @@ Todos os templates usam o mesmo padrão de paginação Bootstrap 5:
 # Testes de paginação apenas
 docker-compose exec web python manage.py test salas.tests.test_pagination -v 2
 
-# Todos os testes (150)
+# Todos os testes (169)
 docker-compose exec web python manage.py test --parallel
 ```
 
 ## 📊 Resultados
 
 ✅ **6 testes de paginação - TODOS PASSARAM**
-✅ **150 testes totais do projeto - TODOS PASSARAM**
+✅ **169 testes totais do projeto - TODOS PASSARAM**
 
 ## 🔑 Recursos do Paginator Django Utilizados
 
@@ -225,7 +225,7 @@ page_obj.paginator.page_range      # Range de números de páginas
 Para ver a paginação em ação:
 
 1. Acesse http://localhost:8000/salas/
-2. Se houver mais de 6 salas, controles de paginação aparecem
+2. Se houver mais de 8 salas, controles de paginação aparecem
 3. Navegue entre páginas usando os botões
 
 ---

@@ -241,7 +241,6 @@ def criar_sala(request):
 
 
 @admin_required
-@csrf_exempt  # a view de API aceita chamadas via fetch; validacao de campos continua
 @require_POST
 def api_criar_sala(request):
     try:
@@ -313,7 +312,6 @@ def api_criar_sala(request):
 
 
 @admin_required
-@csrf_exempt  # permite fetch sem sessao de admin; validacao e CSRF do header permanecem
 @require_http_methods(["POST", "PUT", "PATCH", "DELETE"])
 def api_update_delete_sala(request, sala_id):
     try:
@@ -333,11 +331,11 @@ def api_update_delete_sala(request, sala_id):
                 {"errors": ["Não é possível excluir esta sala pois existem reservas ativas. Aguarde até que todas as reservas sejam concluídas ou canceladas."]},
                 status=400
             )
-        
-        # Remove reservas históricas e deleta a sala (somente se não houver ativas)
-        sala.reservas.all().delete()
-        sala.delete()
-        return JsonResponse({"message": "Sala removida com sucesso.", "id": sala_id})
+
+        # Soft delete: mantém histórico de reservas e libera nome para nova sala
+        sala.ativo = False
+        sala.save(update_fields=["ativo"])
+        return JsonResponse({"message": "Sala desativada com sucesso.", "id": sala_id})
 
     if reservas_ativas_qs.exists():
         return JsonResponse(

@@ -160,7 +160,8 @@ class SalaTests(TestCase):
 
         resp = self.client.delete(reverse("api_update_delete_sala", args=[sala.id]))
         self.assertEqual(resp.status_code, 200)
-        self.assertFalse(Sala.objects.filter(id=sala.id).exists())
+        sala.refresh_from_db()
+        self.assertFalse(sala.ativo)
 
     # CT5.2 – Tentativa de Excluir Sala com Reservas Futuras
     def test_tentativa_exclusao_sala_com_reservas_futuras(self):
@@ -229,6 +230,7 @@ class SalaTests(TestCase):
         # Deve permitir a exclusão (200 OK)
         self.assertEqual(resp.status_code, 200)
         
-        # Verifica que a sala foi deletada
-        self.assertFalse(Sala.objects.filter(id=sala.id).exists())
+        # Verifica que a sala foi desativada (soft delete)
+        sala.refresh_from_db()
+        self.assertFalse(sala.ativo)
 
