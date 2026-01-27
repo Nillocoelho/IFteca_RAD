@@ -5,8 +5,10 @@ Cobre: criação, listagem, cancelamento e validações de reservas
 import json
 from datetime import timedelta
 
+from django.core import mail
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
+from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -161,6 +163,37 @@ class ReservaTests(TestCase):
 
         self.assertEqual(resp.status_code, 400)
 
+    @override_settings(
+        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        DEFAULT_FROM_EMAIL="nillocoelho@gmail.com",
+        RESERVA_EMAIL_DESTINO="coelho.danillo@academico.ifpb.edu.br",
+    )
+    def test_envia_email_confirmacao_ao_criar_reserva(self):
+        """CT-R4b: Email é enviado quando a reserva é criada"""
+        self.login_estudante()
+        mail.outbox.clear()
+        data_futura = (timezone.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+
+        payload = {
+            "sala_id": self.sala.id,
+            "data": data_futura,
+            "inicio": "09:00",
+            "fim": "10:00",
+        }
+
+        resp = self.client.post(
+            reverse("api_criar_reserva"),
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertIn("Confirmacao de Reserva", email.subject)
+        self.assertEqual(email.to, ["coelho.danillo@academico.ifpb.edu.br"])
+        self.assertIn("Sala Teste Reserva", email.body)
+
     # ========== TESTES DE LISTAGEM DE RESERVAS ==========
 
     def test_listar_minhas_reservas(self):
@@ -216,6 +249,32 @@ class ReservaTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         reserva.refresh_from_db()
         self.assertTrue(reserva.cancelada)
+
+    @override_settings(
+        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        DEFAULT_FROM_EMAIL="nillocoelho@gmail.com",
+        RESERVA_EMAIL_DESTINO="coelho.danillo@academico.ifpb.edu.br",
+    )
+    def test_envia_email_cancelamento_ao_cancelar_reserva(self):
+        """CT-R7b: Email é enviado ao cancelar reserva"""
+        inicio = timezone.now() + timedelta(days=5, hours=10)
+        reserva = Reserva.objects.create(
+            sala=self.sala,
+            usuario=self.estudante.username,
+            inicio=inicio,
+            fim=inicio + timedelta(hours=2),
+        )
+
+        self.login_estudante()
+        mail.outbox.clear()
+        resp = self.client.post(reverse("api_cancelar_reserva", args=[reserva.id]))
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertIn("Cancelamento de Reserva", email.subject)
+        self.assertEqual(email.to, ["coelho.danillo@academico.ifpb.edu.br"])
+        self.assertIn(reserva.sala.nome, email.body)
 
     def test_estudante_nao_cancela_reserva_alheia(self):
         """CT-R8: Estudante não pode cancelar reserva de outro"""

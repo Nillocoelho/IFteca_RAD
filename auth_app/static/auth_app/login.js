@@ -59,6 +59,36 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
+      // Verifica se o usuário está tentando acessar uma rota protegida sem permissão adequada
+      const isAdminRoute = nextUrl && (
+        nextUrl.includes("/admin/") || 
+        nextUrl.includes("/gerenciar") ||
+        nextUrl.includes("/api/dashboard/") ||
+        nextUrl.includes("/api/usuarios/") ||
+        nextUrl.startsWith("/admin/") ||
+        nextUrl.match(/\/(admin|reservas\/admin|salas\/admin)\/(dashboard|salas|reserva|usuarios)/)
+      );
+      
+      // Rotas de API que requerem permissão de admin
+      const isAdminApiRoute = nextUrl && (
+        nextUrl.match(/\/api\/salas\/((?!lookup)[^\/]*)/) || // API de salas exceto lookup
+        nextUrl.includes("/admin/reservas/") ||
+        nextUrl.includes("/admin/usuarios/")
+      );
+      
+      if ((isAdminRoute || isAdminApiRoute) && !data.is_staff) {
+        feedback.innerHTML = `
+          <strong>⚠️ Acesso Negado</strong><br>
+          Você não tem permissão para acessar áreas administrativas. Redirecionando para suas reservas...
+        `;
+        feedback.className = "alert alert-warning";
+        
+        setTimeout(() => {
+          window.location.href = data.redirect_url || "/minhas-reservas/";
+        }, 2000);
+        return;
+      }
+      
       feedback.textContent = "Login realizado com sucesso. Redirecionando...";
       feedback.className = "alert alert-success";
       

@@ -34,7 +34,7 @@ docker exec ifteca_rad-web-1 python scripts/popular_banco_faker.py
 
 ### 1.3 Executar Testes
 ```bash
-# Rodar todos os 167 testes
+# Rodar todos os 169 testes
 docker exec ifteca_rad-web-1 python manage.py test
 
 # Rodar testes com detalhes
@@ -343,11 +343,20 @@ def serialize_sala(sala):
 
 ---
 
-### 3.6 🧪 TESTES AUTOMATIZADOS
+### 3.6 📨 NOTIFICACOES POR EMAIL (GMAIL)
+
+- Envio automatico via SMTP Gmail (TLS na porta 587) com senha de app (`SMTP_USER`, `SMTP_PASS`, `SMTP_HOST`, `SMTP_PORT`).
+- Destinatario fixo para evitar spam em ambiente academico: `coelho.danillo@academico.ifpb.edu.br` (ajustavel via `RESERVA_EMAIL_DESTINO` no `.env`).
+- Disparos na criacao da reserva (confirmacao) e no cancelamento, inclusive cancelamentos feitos por administradores.
+- Implementacao centralizada em `reservas/email_service.py`; falhas de envio sao logadas sem bloquear a operacao do usuario.
+
+---
+
+### 3.7 🧪 TESTES AUTOMATIZADOS
 
 #### **Resumo dos Testes**
 ```
-Total: 167 testes
+Total: 169 testes
 Status: ✅ Todos passando
 ```
 
@@ -366,7 +375,7 @@ Status: ✅ Todos passando
 
 📁 reservas/tests/
    ├── test_salas_admin.py   → Testes de admin de salas
-   └── test_reservas.py      → 17 testes de reservas
+   └── test_reservas.py      → 21 testes de reservas
 ```
 
 #### **Categorias de Testes**
@@ -378,7 +387,7 @@ Status: ✅ Todos passando
 | **Autorização** | 15+ | Permissões admin/staff/user |
 | **Paginação** | 10+ | Navegação, limites |
 | **API REST** | 30+ | Endpoints, JSON, status codes |
-| **Reservas** | 17 | Criar, cancelar, conflitos, permissões |
+| **Reservas** | 21 | Criar, cancelar, conflitos, permissões, emails |
 
 #### **Testes de Reservas (Detalhado)**
 | Código | Descrição |
@@ -387,9 +396,11 @@ Status: ✅ Todos passando
 | CT-R2 | Tentativa de reserva sem login |
 | CT-R3 | Tentativa de reserva em sala inexistente |
 | CT-R4 | Tentativa de reserva com conflito de horário |
+| CT-R4b | Email enviado ao criar reserva |
 | CT-R5 | Estudante vê apenas suas próprias reservas |
 | CT-R6 | Admin vê todas as reservas |
 | CT-R7 | Estudante pode cancelar sua própria reserva |
+| CT-R7b | Email enviado ao cancelar reserva |
 | CT-R8 | Estudante não pode cancelar reserva de outro |
 | CT-R9 | Admin pode cancelar qualquer reserva |
 | CT-R10 | Não pode cancelar reserva já concluída |
@@ -473,7 +484,7 @@ docker-compose up -d
 ### Passo 4: Rodar Testes
 ```bash
 docker exec ifteca_rad-web-1 python manage.py test
-# Resultado esperado: OK (167 testes)
+# Resultado esperado: OK (169 testes)
 ```
 
 ---
