@@ -1,6 +1,8 @@
 from django.contrib.auth import login, logout
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django_ratelimit.decorators import ratelimit
+from django.utils.decorators import method_decorator
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -14,6 +16,7 @@ class LoginView(APIView):
     def get(self, request):
         return Response({"detail": "Use POST para fazer login."})
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

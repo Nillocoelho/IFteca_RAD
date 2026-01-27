@@ -99,7 +99,12 @@ document.addEventListener("DOMContentLoaded", () => {
         window.location.href = redirectTo;
       }, 600);
     } catch (error) {
-      console.error("Erro ao autenticar", error);
+      // Usa logger condicional se disponível, senão usa console.error padrão
+      if (window.logger) {
+        window.logger.error("Erro ao autenticar", error);
+      } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        console.error("Erro ao autenticar", error);
+      }
       feedback.textContent = "Erro inesperado. Tente novamente.";
       feedback.className = "alert alert-error";
     }

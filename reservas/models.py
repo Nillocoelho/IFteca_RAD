@@ -11,6 +11,13 @@ class Reserva(models.Model):
         related_name="reservas",
     )
 
+    # NOTA: Campo usuario usa CharField por razões históricas
+    # TODO: Em refatoração futura, migrar para ForeignKey('auth.User')
+    # Isso permitirá:
+    # - Relacionamento real com tabela de usuários
+    # - Queries complexas e relatórios melhores
+    # - Integridade referencial adequada
+    # - Suporte a mudanças de username sem perder histórico
     usuario = models.CharField(
         max_length=100,
         verbose_name="Usuário",

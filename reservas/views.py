@@ -3,6 +3,8 @@ import logging
 from datetime import timedelta
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
@@ -27,7 +29,6 @@ logger = logging.getLogger(__name__)
 # ============================================
 
 @login_required(login_url="/login/")
-@csrf_exempt
 def salas_admin(request):
     """
     Endpoint GET/POST /api/admin/salas/
@@ -88,7 +89,7 @@ def salas_admin(request):
         
         try:
             raw_body = request.body.decode("utf-8")
-            logger.info("salas_admin POST recebido com body cru: %s", raw_body)
+            logger.info("salas_admin POST recebido")
             data = json.loads(raw_body)
         except json.JSONDecodeError:
             logger.warning("salas_admin POST com JSON inválido", exc_info=True)
@@ -176,7 +177,6 @@ def salas_admin(request):
 # ============================================
 
 @login_required(login_url="/login/")
-@csrf_exempt
 def atualizar_sala(request, sala_id):
     """
     Endpoint PUT /api/admin/salas/<id>/
@@ -271,7 +271,6 @@ def atualizar_sala(request, sala_id):
 # ============================================
 
 @login_required(login_url="/login/")
-@csrf_exempt
 def deletar_sala(request, sala_id):
     """
     Endpoint DELETE /api/admin/salas/<id>/
@@ -352,7 +351,13 @@ def minhas_reservas(request):
     
     IMPORTANTE: select_related('sala') garante que salas inativas (soft delete)
     ainda sejam exibidas no histórico de reservas.
+    
+    Administradores são redirecionados para o dashboard administrativo.
     """
+    # Admins devem usar o painel administrativo, não a área de estudantes
+    if request.user.is_staff or request.user.is_superuser:
+        return redirect('admin_dashboard')
+    
     usuario = request.user.username
     agora = timezone.now()
     
@@ -394,13 +399,19 @@ def minhas_reservas(request):
 
 @login_required(login_url="/login/")
 def confirmacao_reserva(request):
-    """Renderiza a tela de confirmação de reserva."""
+    """Renderiza a tela de confirmação de reserva (apenas para estudantes)."""
+    if request.user.is_staff or request.user.is_superuser:
+        return redirect('admin_dashboard')
     return render(request, 'reservas/confirmacao_reserva.html')
 
 
 @login_required(login_url="/login/")
 def detalhes_reserva(request, reserva_id):
-    """Renderiza a tela de detalhes de uma reserva específica."""
+    """Renderiza a tela de detalhes de uma reserva específica (apenas estudante proprietário)."""
+    # Admins devem usar o painel administrativo para ver reservas
+    if request.user.is_staff or request.user.is_superuser:
+        return redirect('admin_reservas')
+    
     try:
         reserva = Reserva.objects.get(id=reserva_id, usuario=request.user.username)
     except Reserva.DoesNotExist:
@@ -494,7 +505,6 @@ def admin_reservas(request):
     return render(request, 'reservas/admin_reservas.html', context)
 
 
-@csrf_exempt
 @staff_member_required(login_url='/login/')
 def api_admin_cancel_reserva(request, reserva_id):
     """API para administradores cancelarem qualquer reserva."""
@@ -527,7 +537,6 @@ def api_admin_cancel_reserva(request, reserva_id):
     return JsonResponse({'success': True, 'message': 'Reserva cancelada com sucesso.'}, status=200)
 
 
-@csrf_exempt
 def api_horarios_disponiveis(request, sala_id):
     """
     API GET para buscar horários disponíveis de uma sala em uma data específica.
@@ -603,14 +612,20 @@ def api_horarios_disponiveis(request, sala_id):
 
 
 @login_required(login_url="/login/")
-@csrf_exempt
 def api_criar_reserva(request):
     """
-    API POST para criar uma nova reserva.
+    API POST para criar uma nova reserva (apenas para estudantes).
+    Administradores não podem fazer reservas - eles gerenciam o sistema.
     Body JSON: {"sala_id": 1, "data": "YYYY-MM-DD", "inicio": "HH:MM", "fim": "HH:MM"}
     """
     if request.method != "POST":
         return JsonResponse({"detail": "Método não permitido."}, status=405)
+    
+    # Administradores não fazem reservas como estudantes
+    if request.user.is_staff or request.user.is_superuser:
+        return JsonResponse({
+            "detail": "Administradores não podem fazer reservas. Use o painel administrativo para gerenciar reservas."
+        }, status=403)
     
     try:
         data = json.loads(request.body.decode('utf-8'))
@@ -709,7 +724,6 @@ def api_criar_reserva(request):
 
 
 @login_required(login_url="/login/")
-@csrf_exempt
 def api_cancelar_reserva(request, reserva_id):
     """
     API POST para cancelar uma reserva.
@@ -859,7 +873,6 @@ def gerenciar_usuarios(request):
 
 
 @staff_member_required(login_url='/login/')
-@csrf_exempt
 def api_toggle_usuario(request, usuario_id):
     """API para ativar/desativar um usuário."""
     if request.method != 'POST':
@@ -897,7 +910,6 @@ def api_toggle_usuario(request, usuario_id):
 
 
 @staff_member_required(login_url='/login/')
-@csrf_exempt
 def api_criar_usuario(request):
     """API para criar um novo usuário (admin/staff)."""
     if request.method != 'POST':
@@ -924,8 +936,10 @@ def api_criar_usuario(request):
     password = data['password']
     tipo = data['tipo']
     
-    # Validar email
-    if '@' not in email:
+    # Validar email com EmailValidator do Django
+    try:
+        validate_email(email)
+    except ValidationError:
         return JsonResponse({'error': 'E-mail inválido.'}, status=400)
     
     # Verificar se email já existe
