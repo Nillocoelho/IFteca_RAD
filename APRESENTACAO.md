@@ -1,6 +1,7 @@
 # 🎓 IFTECA - Sistema de Reserva de Salas
 ## Apresentação Final - RAD (Rápido Desenvolvimento de Aplicações)
 
+Equipe: Danillo Coelho Barbosa, Pedro Henrique Barbosa, Cássia Dos Santos, Raiza Tomazoni
 ---
 
 ## 📦 1. COMANDOS DOCKER (Rodar do Zero)
