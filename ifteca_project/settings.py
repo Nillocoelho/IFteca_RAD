@@ -22,7 +22,17 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-a!5jud18&opsed^@jp$
 DEBUG = _env_bool(os.getenv('DJANGO_DEBUG'), True)
 
 _allowed_hosts_raw = os.getenv('DJANGO_ALLOWED_HOSTS')
-ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_raw.split(',') if h.strip()] if _allowed_hosts_raw else ['localhost', '127.0.0.1', '0.0.0.0']
+if _allowed_hosts_raw:
+    # Hosts explicitados via variável de ambiente (ex.: "localhost,127.0.0.1,192.168.0.10")
+    ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_raw.split(',') if h.strip()]
+else:
+    # Padrão seguro para dev: localhost + host de testes + wildcard quando DEBUG=True
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', 'testserver']
+    if DEBUG:
+        ALLOWED_HOSTS.append('*')
+
+# Remove duplicados preservando ordem
+ALLOWED_HOSTS = list(dict.fromkeys(ALLOWED_HOSTS))
 
 
 # --------------------------

@@ -10,6 +10,8 @@
   <link rel="stylesheet" href="{% static 'reservas/admin_reservas.css' %}">
 </head>
 <body data-is-admin="{{ is_admin|yesno:'true,false' }}">
+  <!-- Garante que o cookie CSRF seja enviado na primeira resposta para uso via fetch -->
+  <form id="csrfBootstrap" style="display:none;">{% csrf_token %}</form>
   <header class="admin-header">
     <div class="header-brand">
       <i class="bi bi-building"></i>
