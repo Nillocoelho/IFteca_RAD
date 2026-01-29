@@ -211,6 +211,14 @@ function generateReport() {
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 20;
     let yPos = 0;
+    const footerMargin = 20;
+
+    const ensureSpace = (needed = 0) => {
+        if (yPos + needed > pageHeight - footerMargin) {
+            doc.addPage();
+            yPos = 30; // margem superior ao quebrar página
+        }
+    };
 
     // ==================================
     // CABEÇALHO
@@ -291,6 +299,7 @@ function generateReport() {
     // TÍTULO DA SEÇÃO: RESERVAS POR MÊS
     // ==================================
     
+    ensureSpace(60);
     doc.setTextColor(0, 139, 69);
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
@@ -332,6 +341,8 @@ function generateReport() {
     // TÍTULO DA SEÇÃO: TAXA DE USO POR SALA
     // ==================================
     
+    // Se a lista não couber na página atual, quebra antes de imprimir
+    ensureSpace(roomData.length * 12 + 40);
     doc.setTextColor(0, 139, 69);
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
@@ -346,6 +357,7 @@ function generateReport() {
     doc.setFontSize(10);
     
     roomData.forEach((sala, index) => {
+        ensureSpace(15); // quebra antes de cada item se faltar espaço
         // Nome da sala
         doc.setTextColor(60, 60, 60);
         doc.setFont('helvetica', 'normal');
@@ -376,6 +388,7 @@ function generateReport() {
     // ALERTAS
     // ==================================
     
+    ensureSpace(40);
     doc.setTextColor(0, 139, 69);
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
@@ -411,22 +424,25 @@ function generateReport() {
     }
 
     // ==================================
-    // RODAPÉ
+    // RODAPÉ (todas as páginas)
     // ==================================
-    
-    const footerY = pageHeight - 20;
-    
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.3);
-    doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
-    
-    doc.setFontSize(8);
-    doc.setTextColor(128, 128, 128);
-    doc.setFont('helvetica', 'normal');
-    
-    doc.text('IFTECA - Sistema de Gerenciamento de Salas', margin, footerY);
-    doc.text('Instituto Federal da Paraíba', pageWidth / 2, footerY, { align: 'center' });
-    doc.text(`Página 1 de 1`, pageWidth - margin, footerY, { align: 'right' });
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        const footerY = pageHeight - 20;
+        
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.3);
+        doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
+        
+        doc.setFontSize(8);
+        doc.setTextColor(128, 128, 128);
+        doc.setFont('helvetica', 'normal');
+        
+        doc.text('IFTECA - Sistema de Gerenciamento de Salas', margin, footerY);
+        doc.text('Instituto Federal da Paraíba', pageWidth / 2, footerY, { align: 'center' });
+        doc.text(`Página ${i} de ${totalPages}`, pageWidth - margin, footerY, { align: 'right' });
+    }
 
     // ==================================
     // SALVAR PDF
