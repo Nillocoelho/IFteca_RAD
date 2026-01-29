@@ -1021,6 +1021,11 @@ def admin_dashboard(request):
     total_salas = Sala.objects.filter(ativo=True).count()
     salas_disponiveis = Sala.objects.filter(ativo=True, status='Disponivel').count()
     salas_manutencao = Sala.objects.filter(ativo=True, status='Em Manutencao').count()
+    salas_manutencao_list = list(
+        Sala.objects.filter(ativo=True, status='Em Manutencao')
+        .order_by('nome')
+        .values_list('nome', flat=True)
+    )
     
     # Usuários
     total_usuarios = User.objects.filter(is_active=True).count()
@@ -1130,6 +1135,7 @@ def admin_dashboard(request):
         # Gráficos (JSON para JavaScript)
         'dados_mensais_json': json.dumps(dados_mensais),
         'dados_salas_json': json.dumps(dados_salas),
+        'salas_manutencao_json': json.dumps(salas_manutencao_list),
         
         # Alertas
         'salas_manutencao_count': salas_manutencao,

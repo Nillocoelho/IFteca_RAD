@@ -224,6 +224,19 @@ function generateReport() {
     // CABEÇALHO
     // ==================================
     
+    // "Logo" simples desenhado no PDF (ícone prédio)
+    const logoX = margin;
+    const logoY = 10;
+    doc.setFillColor(233, 246, 255); // fundo claro
+    doc.roundedRect(logoX, logoY, 18, 18, 4, 4, 'F');
+    doc.setFillColor(0, 139, 69); // corpo do prédio
+    doc.rect(logoX + 4, logoY + 4, 10, 10, 'F');
+    doc.setFillColor(255, 255, 255); // janelas
+    doc.rect(logoX + 5, logoY + 5, 3, 3, 'F');
+    doc.rect(logoX + 10, logoY + 5, 3, 3, 'F');
+    doc.rect(logoX + 5, logoY + 10, 3, 3, 'F');
+    doc.rect(logoX + 10, logoY + 10, 3, 3, 'F');
+
     // Fundo verde do cabeçalho
     doc.setFillColor(0, 139, 69); // #008B45
     doc.rect(0, 0, pageWidth, 45, 'F');
@@ -404,10 +417,21 @@ function generateReport() {
     doc.setTextColor(60, 60, 60);
     
     if (kpis.salasManutencao > 0) {
+        const blocoAltura = 12 + (salasManutencao?.length || 0) * 6 + 4;
+        ensureSpace(blocoAltura);
         doc.setFillColor(254, 243, 199); // Amarelo claro
-        doc.roundedRect(margin, yPos, pageWidth - margin * 2, 12, 3, 3, 'F');
-        doc.text(`⚠ ${kpis.salasManutencao} sala(s) em manutenção`, margin + 5, yPos + 8);
-        yPos += 16;
+        doc.roundedRect(margin, yPos, pageWidth - margin * 2, blocoAltura, 3, 3, 'F');
+        doc.text(`Alerta: ${kpis.salasManutencao} sala(s) em manutenção`, margin + 5, yPos + 8);
+        yPos += 14;
+
+        if (Array.isArray(salasManutencao) && salasManutencao.length) {
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(90, 90, 90);
+            salasManutencao.forEach((nome) => {
+                doc.text(`• ${nome}`, margin + 8, yPos + 4);
+                yPos += 6;
+            });
+        }
     }
     
     if (kpis.reservasHoje > 0) {
