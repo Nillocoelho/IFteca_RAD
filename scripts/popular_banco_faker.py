@@ -120,7 +120,7 @@ for i in range(NUM_PROFESSORES):
         password="senha123",
         first_name=primeiro_nome,
         last_name=sobrenome,
-        is_staff=True,
+        is_staff=False,      # Professor não é staff/admin
         is_superuser=False,
         is_active=True
     )
@@ -134,9 +134,9 @@ print(f"\n  Total de professores criados: {professores_criados}")
 # ============================================
 print("\n📅 Criando Reservas...")
 
-# Buscar todas as salas e usuários
+# Buscar todas as salas e usuários (somente não-staff)
 salas = list(Sala.objects.filter(ativo=True))
-usuarios = list(User.objects.filter(is_active=True, is_superuser=False))
+usuarios = list(User.objects.filter(is_active=True, is_staff=False, is_superuser=False))
 
 if not salas:
     print("  ❌ Nenhuma sala encontrada!")
@@ -172,7 +172,7 @@ else:
         
         # Sala e usuário aleatórios
         sala = random.choice(salas)
-        usuario = random.choice(usuarios)
+        usuario = random.choice(usuarios)  # garantidamente não-staff
         
         # Verificar se já existe reserva no mesmo horário/sala
         conflito = Reserva.objects.filter(
@@ -218,7 +218,7 @@ print(f"  Salas Disponíveis: {Sala.objects.filter(ativo=True, status='Disponive
 print(f"  Salas em Manutenção: {Sala.objects.filter(ativo=True, status='Em Manutenção').count()}")
 print(f"  Usuários Ativos: {User.objects.filter(is_active=True).count()}")
 print(f"  Estudantes: {User.objects.filter(is_active=True, is_staff=False, is_superuser=False).count()}")
-print(f"  Professores: {User.objects.filter(is_active=True, is_staff=True, is_superuser=False).count()}")
+print(f"  Professores: {User.objects.filter(is_active=True, username__startswith='professor').count()}")
 print(f"  Total de Reservas: {Reserva.objects.count()}")
 print(f"  Reservas Ativas: {Reserva.objects.filter(cancelada=False).count()}")
 print(f"  Reservas Canceladas: {Reserva.objects.filter(cancelada=True).count()}")

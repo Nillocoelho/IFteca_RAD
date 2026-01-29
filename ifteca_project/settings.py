@@ -144,6 +144,16 @@ TIME_ZONE = 'America/Sao_Paulo'
 USE_I18N = True
 USE_TZ = True
 
+# --------------------------
+# SESSÕES / AUTENTICAÇÃO
+# --------------------------
+# Encerra sessão ao fechar o navegador
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+# Expira sessão por tempo (30 minutos) como fallback mesmo que o navegador restaure abas
+SESSION_COOKIE_AGE = 30 * 60  # 30 minutos
+# Opcional: renova o prazo a cada requisição autenticada
+SESSION_SAVE_EVERY_REQUEST = True
+
 
 # --------------------------
 # STATIC FILES
