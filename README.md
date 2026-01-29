@@ -1,75 +1,50 @@
-# IFteca_RAD
+# IFTECA – Sistema de Reserva de Salas
 
-Um sistema leve de gerenciamento e reserva de salas desenvolvido em Django, pensado para uso acadêmico e institucional — autenticação, cadastro e gerenciamento de salas, criação e visualização de reservas, e uma interface administrativa pronta para uso.
+Projeto acadêmico em Django que entrega autenticação, gestão de salas, criação/cancelamento de reservas e um painel administrativo completo com gráficos e exportação em PDF. Pensado para ser mostrado em feira ou banca: fácil de subir, com dados fictícios e suite de testes cobrindo os fluxos principais.
 
-Principais componentes:
+## Visão Geral
 
-- `auth_app`: autenticação e views de login.
-- `salas`: modelos e views para gerenciar salas (capacidade, localização, equipamentos).
-- `reservas`: criação e gerenciamento de reservas, confirmação e cancelamento.
-- `ifteca_project`: configuração do projeto Django (settings, URLs, WSGI/ASGI).
+- **Público-alvo:** bibliotecas, laboratórios e salas de estudo em instituições de ensino.
+- **Perfis:**  
+  - **Administrador/Staff:** gerencia salas, usuários e reservas; emite relatórios.  
+  - **Professor/Estudante:** consulta salas, cria e cancela as próprias reservas.
+- **API + UI:** endpoints REST (DRF) e front-end server-side com Bootstrap 5.
 
-Características
----------------
+## Principais Funcionalidades
 
-- **Autenticação e Autorização**: Sistema completo com login/logout, controle de acesso baseado em papéis (admin/estudante)
-- **API REST**: Endpoints com Django REST Framework, Token Authentication e Session Authentication
-- **Arquitetura MVT**: Models, Views e Templates bem estruturados seguindo padrões Django
-- **Paginação**: Implementada com Django Paginator em listagens de salas e reservas (8 itens por página)
-- **CRUD Completo**: Gerenciamento de salas e reservas com validações de negócio
-- **Templates Responsivos**: Interface moderna com Bootstrap 5 e JavaScript para interação
-- **Testes Automatizados**: 169 testes cobrindo models, views, APIs e paginação
-- **Docker**: Suporte completo com docker-compose.yml para ambiente containerizado
-- **Soft Delete**: Salas inativas mantêm histórico de reservas
+- Login com sessão e token (DRF), proteção CSRF e timeout de sessão.
+- CRUD de salas com soft delete, status (Disponivel / Em Manutencao) e equipamentos.
+- Reserva de horários sem sobreposição, cancelamento pelo usuário e pelo admin.
+- Dashboard com KPIs, gráficos (Chart.js) e exportação de relatório em PDF (jsPDF).
+- Paginação em listas de salas, reservas e usuários (8 itens/página).
+- Scripts Faker para popular rapidamente com dados de exemplo.
 
-Tecnologias
-----------
+## Arquitetura (apps)
 
-- Python 3.x
-- Django
-- SQLite (padrão para desenvolvimento)
-- Docker + Docker Compose (opcional para deploy/ambiente)
+- `auth_app` – login/logout, serializers e endpoints de autenticação.
+- `salas` – modelos e views de salas, páginas públicas de listagem.
+- `reservas` – lógica de reserva, dashboard, APIs administrativas.
+- `ifteca_project` – settings, URLs, WSGI/ASGI.
 
-Instalação Rápida (ambiente local)
----------------------------------
+## Stack e Dependências
 
-1. Clone o repositório:
+- Python 3.11+ / Django 5.1
+- Django REST Framework, Authtoken
+- SQLite para dev (default), pronto para outro backend via `DATABASES`
+- Bootstrap 5, Chart.js, jsPDF
+- Faker (dados fictícios), django-ratelimit, livereload (dev)
+
+## Como Rodar (local)
 
 ```bash
-git clone https://github.com/Nillocoelho/IFteca_RAD.git
-cd IFteca_RAD
-```
-
-2. Crie e ative um ambiente virtual (Windows):
-
-```powershell
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
-
-3. Instale dependências:
-
-```bash
+.\.venv\Scripts\Activate.ps1   # Windows
 pip install -r requirements.txt
-```
-
-4. Aplique migrações e crie um superusuário:
-
-```bash
 python manage.py migrate
-python manage.py createsuperuser
-```
-
-5. Execute o servidor de desenvolvimento:
-
-```bash
 python manage.py runserver
 ```
 
-Execução com Docker
--------------------
-
-Se preferir usar Docker (recomendado para replicar ambiente):
+## Como Rodar (Docker)
 
 ```bash
 docker compose build
@@ -77,98 +52,68 @@ docker compose up -d
 docker compose exec web python manage.py migrate
 ```
 
-Testes
-------
+Aplicação: http://localhost:8000
 
-Execute a suíte completa de testes (169 testes):
+## Dados de Exemplo (Faker)
+
+Popular o banco com salas/usuários/reservas sintéticos (professores NÃO recebem permissões de admin e admins não ganham reservas):
+
+```bash
+python manage.py shell -c "exec(open('scripts/popular_banco_faker.py', 'r', encoding='utf-8').read())"
+```
+
+## Perfis e Regras
+
+- **Administrador (is_superuser=True):** tudo; cancela qualquer reserva; acessa “Gerenciar Usuários”.
+- **Staff (is_staff=True, não superuser):** pode gerenciar reservas e salas; não cancela reservas de outros admins; vê “Gerenciar Usuários”.
+- **Professor/Estudante (is_staff=False):** faz/cancela apenas as próprias reservas; não acessa páginas de gestão.
+- Admin/Staff são bloqueados no endpoint de criação de reserva (não fazem reservas).
+
+## Segurança e Sessão
+
+- CSRF habilitado em POST/PUT/DELETE via fetch com `X-CSRFToken`.
+- Sessão expira ao fechar o navegador e por tempo (`SESSION_COOKIE_AGE=1800`), renovada a cada requisição.
+- Ratelimit no login (django-ratelimit).
+
+## APIs Principais (caminhos úteis)
+
+- Reservas públicas: `GET /reservas/salas/publicas/`
+- Horários disponíveis: `GET /api/salas/<id>/horarios/?data=YYYY-MM-DD`
+- Criar reserva (estudante): `POST /api/reservas/criar/`
+- Cancelar reserva (estudante): `POST /api/reservas/<id>/cancelar/`
+- Dashboard data (admin): `GET /reservas/api/dashboard/`
+- Gestão de salas (admin): `POST/PUT/DELETE /reservas/admin/salas/...` e `/salas/api/salas/…`
+
+## Testes
 
 ```bash
 python manage.py test
 ```
 
-Ou com Docker:
+Cobrem models, views, APIs, paginação e fluxo de reservas (169 testes).
 
-```bash
-docker compose exec web python manage.py test --parallel
-```
+## Scripts Úteis
 
-Testes específicos:
+- `scripts/popular_banco_faker.py` – popula dados.
+- `scripts/corrigir_equipamentos.py` – exemplo de manutenção de dados.
 
-```bash
-# Testes de paginação
-python manage.py test salas.tests.test_pagination -v 2
+## Estrutura
 
-# Testes de autenticação
-python manage.py test auth_app.tests.test_auth -v 2
+- `auth_app/` – autenticação e static/login.
+- `salas/` – modelos, templates e JS de salas.
+- `reservas/` – dashboard, reservas, templates e JS (PDF, toasts, etc.).
+- `scripts/` – automações de dados.
+- `data/db.sqlite3` – banco local (não versionado).
 
-# Testes de models
-python manage.py test salas.tests.test_models -v 2
-```
+## Roadmap Sugerido (acadêmico)
 
-**Cobertura de Testes:**
-- ✅ Models (validações, constraints, soft delete)
-- ✅ Views (autenticação, autorização, CRUD)
-- ✅ APIs REST (endpoints, serializers)
-- ✅ Paginação (Django Paginator)
-- ✅ Autenticação (login, logout, tokens)
-
-Estrutura do Projeto (resumo)
-----------------------------
-
-- `auth_app/` — autenticação, serializers e templates de login
-- `salas/` — modelos, views, templates e testes relacionados às salas
-- `reservas/` — lógica de reserva, confirmações e templates
-- `ifteca_project/` — configuração Django e rotas do projeto
-- `scripts/` — scripts auxiliares para popular dados de exemplo
-- `data/` — backups e arquivos de dados locais
-
-Contribuindo
-------------
-
-- Abra uma issue para discutir mudanças ou melhorias.
-- Envie pull requests com pequenas alterações e descrições claras.
-- Mantenha estilo de código consistente e inclua testes quando apropriado.
-
-Licença
--------
-
-Este repositório está pronto para receber uma licença — sugiro MIT. Adicione um arquivo `LICENSE` se desejar publicar sob termos específicos.
-
-Contato
--------
-
-Criado por Nillocoelho — abra uma issue ou PR no GitHub para sugestões e dúvidas.
+- Trocar e-mail síncrono por fila (Celery/RQ) para UX mais rápida.
+- Modo “somente leitura” para demonstração pública.
+- Permitir múltiplos calendários (campus/andar) e anexos em salas.
+- Adicionar testes end-to-end (Playwright).
 
 ---
 
-Bom trabalho! Se quiser, posso também:
+Equipe: Danillo Coelho Barbosa, Pedro Henrique Barbosa, Cássia Dos Santos, Raiza Tomazoni
 
-- adicionar badges (build, cobertura, license);
-- criar um `docker-compose.override.yml` de exemplo;
-- gerar um arquivo `CONTRIBUTING.md` com orientações mais detalhadas.
-IFteca_RAD
-
-Projeto Django consolidado (Django 5).
-
-Estrutura atual:
-- `manage.py` — entrypoint apontando para `ifteca_project.settings`.
-- `ifteca_project/` — configurações do projeto (settings/urls/wsgi).
-- `salas/` — app de gerenciamento de salas (templates em `salas/templates/salas`, estáticos em `salas/static/salas`).
-- `reservas/` — app de reservas (rotas sob `/reservas/...`).
-- `auth_app/` — autenticação/REST.
-- `data/db.sqlite3` — banco local (não versionado).
-- `legacy_IFTECA_backup/` — backup do projeto antigo (somente consulta).
-
-Como rodar:
-1. Ativar venv: `.\venv\Scripts\Activate` (ou `.\.venv\Scripts\Activate`)
-2. `python manage.py migrate`
-3. `python manage.py runserver`
-
-Rodar com Docker:
-1. Copie o exemplo de env: `cp .env.example .env` e ajuste `DJANGO_SECRET_KEY`/hosts se quiser.
-2. Build: `docker compose build`
-3. Subir: `docker compose up`
-   - App em http://localhost:8000
-   - LiveReload (se usar) expõe 35729
-   - Banco SQLite persiste no volume `sqlite_data` (montado em `/app/data`)
-4. Rodar comandos Django dentro do container: `docker compose run --rm web python manage.py migrate`
+Feito para apresentação acadêmica: suba, popular com Faker, navegue no dashboard, exporte o PDF e mostre as telas de estudante versus admin para evidenciar os controles de acesso.
